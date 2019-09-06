@@ -16,8 +16,8 @@ typedef struct Move{
 	int col;
 	int value;
 	int prevValue;
-	Move lastMove;
-	Move nextMove;
+	struct Move *lastMove;
+	struct Move *nextMove;
 }Move;
 
 /* define a struct representing the sudoku board*/
