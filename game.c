@@ -232,8 +232,13 @@ void initMode(){
 		fflush(stdin);
 		if (fgets(input, 256, stdin) != NULL) {
 			parseUserInput(p, path, input);
-			if (command[0] == 1 | command[0] == 2) /*edit or solve command*/
+			if (command[0] == 1 | command[0] == 2){ /*edit or solve command*/
+				if(command[0] == 1 && commands[1] == 1){ /* user didn't enter path in solveMode */
+					printf("Error: invalid command\n");
+					break;
+				}
 				controlGame(command, strPath);
+			}
 			if(command[0] == 17) /*exit command*/
 				exitMode();
 			if(command[0] == 5) /*blank line */
@@ -257,24 +262,21 @@ void controlGame(int commands[], char str_path[]){
 	char *path = strPath;
 	Game game = (Game*)calloc(1, sizeof(Game));
 
-	if(commands[0] == 1){ /*solveMode*/
-		if(commands[1] == 1) /* user didn't enter path */
-			printf("Error: invalid command\n");
-		else{
-			game.modeNum = 1;
-		}
+	if(commands[0] == 1)
+		game.modeNum = 1;
+	else
+		game.modeNum = 2;
+
+	if(commands[1] == 1){ /*editMode with no pathFile*/
+		/*should load a new board 9x9*/
+	}
+	else{
+		FILE* ifp = fopen(str_path, "r");
+		/*should load an existing board*/
 	}
 
-	if(commands[0] == 2){ /*editMode*/
-		if(commands[1] == 1){
-			/*should load a new board 9x9*/
-		}
-		else{
-			FILE* ifp = fopen(str_path, "r");
-			/*should load an existing board*/
-		}
-		game.modeNum = 2;
-	}
+
+
 	/* scan the user commands till EOF */
 	while (!feof(stdin)) {
 		fflush(stdin);
