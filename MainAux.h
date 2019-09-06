@@ -4,6 +4,9 @@
 
 #define R 3
 #define C 3
+#define init 1
+#define edit 2
+#define solve 3
 
 /* after running a deterministic back-tracking algorithm to validate if the board is solvable,
  * update the saved options of the board in case the user would ask for a hint */

@@ -10,6 +10,27 @@ typedef struct Cell{
 	int optionalValues[9]; /* an array with the possible values that can be allocated to the cell */
 }Cell;
 
+/* define a struct representing a move of the user in the game */
+typedef struct Move{
+	int row;
+	int col;
+	int value;
+	int prevValue;
+	Move lastMove;
+	Move nextMove;
+}Move;
+
+/* define a struct representing the sudoku board*/
+typedef struct Game{
+	Cell ** board;
+	int n;
+	int m;
+	int markErrors;
+	int numOfFilledCells;
+	Move currentMove;
+	int gameMode;
+}Game;
+
 /* set fixed cell according to numOfFilledCells variable &
  * solving the board using nonDeterministic BackTracking algorithm */
 void setBoard(Cell ** board, int numOfFilledCells);
