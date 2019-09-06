@@ -58,13 +58,13 @@ int usedInBox(Cell** board, int boxStartRow, int boxStartCol, int num){
 
 /* Returns 1 if it will be legal to assign num to the given row,col location
  * or 0 if not */
-int isSafe(Cell** board, int row, int col, int num){
-    /* Check if 'num' is not already placed in current row,
+int isSafe(Game game, int row, int col, int val){
+    /* Check if 'val' is not already placed in current row,
        current column and current 3x3 box */
-    return usedInRow(board, row, num) == 0 &&
-           usedInCol(board, col, num) == 0 &&
-           usedInBox(board, row - row%R , col - col%C, num) == 0 &&
-		   board[row][col].fixed == 0;
+    return usedInRow(game.board, row, val) == 0 &&
+           usedInCol(game.board, col, val) == 0 &&
+           usedInBox(game.board, row - row%R , col - col%C, val) == 0 &&
+		   game.board[row][col].fixed == 0;
 }
 
 /* fill the array of the optional values of cell (row,col)

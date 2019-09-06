@@ -13,7 +13,6 @@
 /*hey */
 /* Game Module
  	• represents the current game status
-		• The game status – i.e., the digits in each cell
 		• Stored solution
 	• Allow game status to change:
 		• Apply next move
@@ -68,23 +67,45 @@ void setBoard(Cell ** board, int numOfFilledCells){
 	}
 }
 
+/* randomly fill numOfCellsToFill cells with legal values */
+void setXCellsToBoard(Game game, int numOfCellsToFill){
+	int row = 0;
+	int col = 0;
+	int count = 0;
+	int val =0;
+	int n = game.n;
+	int m = game.m;
+	/*set numOfFilledCells as fixed values*/
+	while (count < numOfCellsToFill) {
+			row = rand()%(n*m);
+			col = rand()%(n*m);
+			if (game.board[row][col].value == 0) {
+				val = rand()%(n*m);
+				if(isSafe(game, row, col, val)){
+					set(game, row, col, val);
+				}
+				game.board[row][col].value = game.board[row][col].savedValue;
+			}
+	}
+}
+
 /* before exiting the game, we free the memory allocated to the board (2d array of Cell) */
-void freeBoard(Cell ** board){
+void freeBoard(Game game){
 	int j;
 	/*in case we passed NULL as the board */
-	if(!board)
+	if(!game)
 		return;
 	/* we free each calloc we made for the columns */
-	for(j = 0; j< C*R; j++)
-		free(board[j]);
+	for(j = 0; j< game.n*game.m; j++)
+		free(game.board[j]);
 	/* we free the calloc of the rows */
-	free(board);
+	free(game.board);
 }
 
 /* a command for exiting the game
  * we free the allocated memory using freeBoard and exiting */
-void exitGame(Cell ** board){
-	freeBoard(board);
+void exitGame(Game game){
+	freeBoard(game);
 	printf("Exiting...\n");
 	exit(0);
 }
