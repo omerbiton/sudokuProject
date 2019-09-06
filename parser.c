@@ -11,7 +11,7 @@
 
 
 /* parse the input string of the player during the game into commands on the board */
-void parseUserInput(int *command, char input[]){
+void parseUserInput(int *command, char* path char input[]){
 	/* define the separators of the user inputs */
 	   const char s[5] = " \t\r\n";
 	   char* token;
@@ -28,10 +28,10 @@ void parseUserInput(int *command, char input[]){
 		   while(i < 1) {
 			   token = strtok(NULL, s);
 			   if(token != NULL){
-				   command[i+1] = atoi(token);
+				   path = token;
 			   }
 			   else{
-				   command[0] = 19;
+				   command[1] = 1;
 		          }
 		      i++;
 		   }
@@ -42,10 +42,10 @@ void parseUserInput(int *command, char input[]){
 		   while(i < 1) {
 			   token = strtok(NULL, s);
 			   if(token != NULL){
-				   command[i+1] = atoi(token);
+				   path = token;
 			   }
 			   else{
-				   command[0] = 19;
+				   command[1] = 1;
 		          }
 		      i++;
 		   }

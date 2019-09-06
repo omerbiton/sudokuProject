@@ -151,18 +151,19 @@ void initMode(){
 	char input[1024];
 	int command[4] = {0};
 	int *p = command;
-	char *path
+	char str[2048];
+	char *path = str;
 	/* scan the user commands till EOF */
 	while (!feof(stdin)) {
 		fflush(stdin);
 		if (fgets(input, 1024, stdin) != NULL) {
-			parseUserInput(p, input);
+			parseUserInput(p, path, input);
 			switch (command[0]) {
 			case 1: /*solve command */
-				solveMode(command[1]);
+				solveMode(command[1], str);
 				break;
 			case 2: /*edit command */
-				editMode(command[1]);
+				editMode(command[1], str);
 				break;
 			case 17: /*exit command*/
 				exitMode();
@@ -181,21 +182,29 @@ void initMode(){
 
 
 /* start the game and interactively apply the users commands */
-void editMode(int commandType, FILE* ifp){
+void editMode(int commandType, char *path){
 	char input[1024];
 	int command[4] = {0};
 	int *p = command;
+	char str[2048];
+	char *path = str;
 	Cell ** board = NULL;
 	/* create a new board for the new game */
 	board = createBoard(board);
+	/* user didnt enterF */
+	if(commandType == 1){
+		board = initialBoard();
+		printBoard();
+	}
+	else{
+		FILE* ifp = fopen(path, "r");
+	}
+
 	/* scan the user commands till EOF */
-	if()
-
-
 	while (!feof(stdin)) {
 		fflush(stdin);
 		if (fgets(input, 1024, stdin) != NULL) {
-			parseUserInput(p, input);
+			parseUserInput(p, path, input);
 			switch (command[0]) {
 			case 1: /*solve command */
 				freeBoard(board);
@@ -251,6 +260,8 @@ void exitMode(){
 	char input[1024];
 	int command[4] = {0};
 	int *p = command;
+	char str[2048];
+	char *path = str;
 	Cell ** board = NULL;
 	/* create a new board for the new game */
 	board = createBoard(board);
@@ -258,7 +269,7 @@ void exitMode(){
 	while (!feof(stdin)) {
 		fflush(stdin);
 		if (fgets(input, 1024, stdin) != NULL) {
-			parseUserInput(p, input);
+			parseUserInput(p,path, input);
 			switch (command[0]) {
 			case 0: /*set command */
 				set(command[2], command[1], command[3], board);
