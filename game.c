@@ -54,7 +54,7 @@ Cell ** allocateMemForStandardBoard(){
 
 /* creating new move and add it to the moves list*/
 void setMove(Game game, int row, int col, int value, int prevValue){
-	Move move = (Move *) calloc(1, sizeof(Move));
+	Move *move = (Move *)calloc(1, sizeof(Move));
 	move.row = row;
 	move.col = col;
 	move.value = value;
