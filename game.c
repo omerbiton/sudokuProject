@@ -103,10 +103,12 @@ void redo(Game game, int printSign){
 
 /* a command the user can put while playing to restart the game */
 void reset(Game game){
-	/* free the memory allocated to the board */
-	freeBoard(board);
-	/* start a new game */
-	initMode();
+	Move move;
+	while(game.currentMove != Null){
+		move = game.currentMove;
+		undo(game, 0);
+		free(move);
+	}
 }
 
 /* in case we end the game and filled all the board,
