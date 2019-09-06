@@ -10,7 +10,7 @@
 
 #define SEP "----------------------------------\n"  /*seParator for printBoard*/
 #define ErrorCalloc "Error: calloc has faild\n" /*error warning if calloc fails*/
-
+/*hey */
 /* Game Module
  	• represents the current game status
 		• The game status – i.e., the digits in each cell
