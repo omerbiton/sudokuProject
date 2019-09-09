@@ -9,14 +9,21 @@
 
 
 #define SEP "----------------------------------\n"  /*separator for printBoard*/
-#define ErrorCalloc "Error: calloc has faild\n" /*error warning if calloc fails*/
+#define ErrorCalloc "Error: calloc has failed\n" /*error warning if calloc fails*/
 
 /* before exiting the game, we free the memory allocated to the board (2d array of Cell) */
-void freeBoard(Game* game){
-	int j;
+void freeGame(Game game){
 	/*in case we passed NULL as the board */
 	if(!game)
 		return;
+	freeBoard(game);
+	clearNextMoves(game);
+	clearPrevMoves(game);
+	/* we free the game */
+	free(game);
+}
+void freeBoard(Game game){
+	int j;
 	/* we free each calloc we made for the columns */
 	for(j = 0; j< game.n*game.m; j++)
 		free(game.board[j]);
@@ -26,14 +33,21 @@ void freeBoard(Game* game){
 
 /* a command for exiting the game
  * we free the allocated memory using freeBoard and exiting */
-void exitGame(Game* game){
-	freeBoard(game);
+void exitGame(Game game){
+	freeGame(game);
 	printf("Exiting...\n");
 	exit(0);
 }
+Game* createGame(){
+	Game *game = (Game*)calloc(1, sizeof(Game));
+	game.n = 3;
+	game.m = 3;
+	game.board = createBoard(game);
+	game.mode = 0;
+}
 
-/* allocating memory for new board of 9*9 sudoku */
-Cell ** createBoard(Game* game){
+/* create a new board */
+Cell ** createBoard(Game game){
 	int n = game.n;
 	int m = game.m;
 	int j;
@@ -55,7 +69,7 @@ Cell ** createBoard(Game* game){
 }
 
 /* creating new move and add it to the moves list*/
-void setMove(Game* game, int row, int col, int value, int prevValue){
+void setMove(Game game, int row, int col, int value, int prevValue){
 	Move move = (Move *)calloc(1, sizeof(Move));
 	move.row = row;
 	move.col = col;
@@ -66,7 +80,7 @@ void setMove(Game* game, int row, int col, int value, int prevValue){
 	game.currentMove = move;
 }
 
-void clearNextMoves(Game* game){
+void clearNextMoves(Game game){
 	Move nextMove = game.currentMove.nextMove;
 	Move moveToClear = game.currentMove.nextMove;
 	while(nextMove != NULL){
@@ -75,8 +89,18 @@ void clearNextMoves(Game* game){
 		moveToClear = nextMove;
 	}
 }
+void clearPrevMoves(Game game){
+	Move moveToClear = game.currentMove.prev;
+	Move prevMove = game.currentMove.prev;
+	while(moveToClear != NULL){
+		prevMove = moveToClear.prevMove;
+		free(moveToClear);
+		moveToClear = nextMove;
+	}
+	free(game.currentMove);
+}
 
-void undo(Game* game, int printSign){
+void undo(Game game, int printSign){
 	/* if there was no move done yet */
 	if(game.currentMove == NULL){
 		printf(ErrorUndo);
@@ -90,7 +114,7 @@ void undo(Game* game, int printSign){
 	}
 }
 
-void redo(Game* game, int printSign){
+void redo(Game game, int printSign){
 	if(game.currentMove.nextMove == NULL){
 		printf(ErrorRedo);
 	}
@@ -104,7 +128,7 @@ void redo(Game* game, int printSign){
 }
 
 /* a command the user can put while playing to restart the game */
-void reset(Game* game){
+void reset(Game game){
 	Move move;
 	while(game.currentMove != NULL){
 		move = game.currentMove;
@@ -212,15 +236,7 @@ void saveBoard(Game game, char* filePath){
 	fclose(file);
 }
 
-void save(Game game, char* filePath){
-	if(game.mode == edit){
-		if(validate(game, 0) == 0){
-			Error();
-			return;
-		}
-		saveBoard(game, filePath);
-	}
-}
+
 
 
 int validate(Game game, int printSign);
@@ -255,21 +271,30 @@ Cell ** copyBoard(Cell** board){
 }
 
 /* print the board in the required format */
-void printBoard(Cell** board){
+void printBoard(Game* game){
+	int n = game.n;
+	int m = game.m;
+	int N = n*m;
 	int row;
 	int col;
+    while(doubleNM != 0)
+    {
+        // n = n/10
+    	doubleNM /= 10;
+        ++maxSpacePerCell;
+    }
 	/* print each row*/
-	for(row = 0; row<R*C; row++){
+	for(row = 0; row<n*m; row++){
 		/* before rows that are multiple of 3, print the separator row*/
-		if(row%R ==0)
+		if(row%n ==0)
 			printf(SEP);
-		for(col = 0; col<R*C; col++){
+		for(col = 0; col<n*m; col++){
 			/* before cols that are multiple of 3, print the separator sign */
-			if(col%C == 0)
+			if(col%m == 0)
 				printf("| ");
 			/* print the value of the cell according to if it is fixed or filled */
-			if(board[row][col].fixed == 0){
-				if(board[row][col].value != 0){
+			if(game->board[row][col].fixed == 0){
+				if(game->board[row][col].value != 0){
 					printf(" %d ", board[row][col].value);
 				}
 				else{
@@ -277,7 +302,10 @@ void printBoard(Cell** board){
 				}
 			}
 			else{
-				printf(".%d ", board[row][col].value);
+				if(game->mode == 2) /*ignore fixed in edit mode*/
+					printf(" %d ", game->board[row][col].value);
+				else
+					printf("%d. ", game->board[row][col].value);
 			}
 		}
 		printf("|\n");
@@ -332,65 +360,55 @@ void validate(Cell ** board){
 	freeBoard(cpBaord);
 }
 
-/* start the game and interactively apply the users commands */
+/* start the game and interactively apply the users commands
 void initMode(){
 	char input[256];
 	int command[4] = {0};
 	int *p = command;
 	char strPath[256];
 	char *path = strPath;
-	/* scan the user commands till EOF */
+	 scan the user commands till EOF
 	while (!feof(stdin)) {
 		fflush(stdin);
 		if (fgets(input, 256, stdin) != NULL) {
 			parseUserInput(p, path, input);
-			if (command[0] == 1 | command[0] == 2){ /*edit or solve command*/
-				if(command[0] == 1 && commands[1] == 1){ /* user didn't enter path in solveMode */
+			if (command[0] == 1 | command[0] == 2){ edit or solve command
+				if(command[0] == 1 && commands[1] == 1){  user didn't enter path in solveMode
 					printf("Error: invalid command\n");
 					break;
 				}
 				controlGame(command, strPath);
 			}
-			if(command[0] == 17) /*exit command*/
+			if(command[0] == 17) exit command
 				exitMode();
-			if(command[0] == 5) /*blank line */
+			if(command[0] == 5) blank line
 				break;
-			if(command[0] == 6){ /*otherwise */
+			if(command[0] == 6){ otherwise
 				printf("Error: invalid command\n");
 				break;
 			}
 		}
 	}
-	/* when reaching EOF, exit the game */
+	 when reaching EOF, exit the game
 	exitMode();
+}*/
+
+void mark_errors(int markErrorNum, int* error){
+	if(markErrorNum == 0 | markErrorNum == 1)
+		*error = markErrorNum;
+	else
+		printf("Error: mark_errors can get only 0 or 1\n");
 }
-
-
-
 /* start the game and interactively apply the users commands */
-void gameControl(int commands[], char str_path[]){
+void gameControl(){
 	char input[256];
 	int command[4] = {0};
+	int markErrors = 1;
+	int* error = &markErrors;
 	int *p = command;
 	char strPath[256];
 	char *path = strPath;
-	Game game = (Game*)calloc(1, sizeof(Game));
-
-	if(commands[0] == 1)
-		game.modeNum = 1;
-	else
-		game.modeNum = 2;
-
-	if(commands[1] == 1){ /*editMode with no pathFile*/
-		/*should load a new board 9x9*/
-	}
-	else{
-		FILE* ifp = fopen(str_path, "r");
-		/*should load an existing board*/
-	}
-
-
-
+	Game game =  createGame();
 	/* scan the user commands till EOF */
 	while (!feof(stdin)) {
 		fflush(stdin);
@@ -399,77 +417,103 @@ void gameControl(int commands[], char str_path[]){
 			switch (command[0]) {
 			case 1: /*solve command */
 				if(commands[1] == 1)
-					printf("Error: invalid command\n");
+					printf("Error: invalid command, have to enter a path\n");
 				else{
 					/*should load an existing board*/
+					game.mode=1;
 				}
-				game.modeNum = 1;
 				break;
 			case 2: /*edit command */
+				if(markErrors == 0)
+					markErrors = 1;
 				if(commands[1] == 1){
 					/*should load a new board 9x9*/
 				}
 				else{
-					FILE* ifp = fopen(strPath, "r");
 					/*should load an existing board*/
 				}
-				game.modeNum = 2;
+				game.mode=2;
 				break;
 			case 3: /*mark_errors command*/
-				if(game.modeNum == 2)
-					mark_errors(game.board);
+				if(game.mode == 1)
+					mark_errors(command[1], error);
 				else
 					printf("Error: invalid command\n");
 				break;
 			case 4: /*printBoard command*/
-				printBoard(game.board);
+				if(game.mode != 0)
+					printBoard(game);
+				else
+					printf("Error: invalid command\n");
 				break;
 			case 5: /*set command */
-				set(game.board);
+				if(game.mode != 0)
+					set(game.board);
 				break;
 			case 6: /*validate command*/
-				validate(game.board);
+				if(game.mode != 0)
+					validate(game.board);
+				else
+					printf("Error: invalid command\n");
 				break;
 			case 7: /*guess command*/
-				if(game.modeNum == 2)
+				if(game.mode == 1)
+					guess(game.board);
+				else
+					printf("Error: invalid command\n");
+			case 8: /*generate command*/
+				if(game.mode == 2)
 					generate(game.board);
 				else
-					/*printError*/
-			case 8: /*generate command*/
-				generate(game.board);
+					printf("Error: invalid command\n");
 				break;
 			case 9: /*undo command*/
-				undo(game.board);
+				if(game.mode != 0)
+					undo(game.board);
+				else
+					printf("Error: invalid command\n");
 				break;
 			case 10: /*redo command*/
-				redo(game.board);
+				if(game.mode != 0)
+					redo(game.board);
+				else
+					printf("Error: invalid command\n");
 				break;
 			case 11: /*save command*/
-				save(game.board);
+				if(game.mode != 0)
+					save(game.board);
+				else
+					printf("Error: invalid command\n");
 				break;
 			case 12: /*hint command*/
-				if(game.modeNum == 2)
+				if(game.mode == 2)
 					hint(command[2], command[1], game.board);
 				else
 					printf("Error: invalid command\n");
 				break;
 			case 13: /*guess_hint command*/
-				if(game.modeNum == 2)
+				if(game.mode == 2)
 					hint(command[2], command[1], game.board);
 				else
 					printf("Error: invalid command\n");
 				break;
 			case 14: /*num_solutions command*/
-				num_solutions(game.board);
+				if(game.mode != 0)
+					num_solutions(game.board);
+				else
+					printf("Error: invalid command\n");
 				break;
 			case 15: /*autofill command*/
-				if(game.modeNum == 2)
+				if(game.mode == 2)
 					autofill(game.board);
 				else
 					printf("Error: invalid command\n");
 				break;
 			case 16: /*reset command*/
-				reset(game.board);
+				if(game.mode != 0)
+					reset(game.board);
+				else
+					printf("Error: invalid command\n");
 				break;
 			case 17: /*exit command*/
 				exitGame(game.board);
