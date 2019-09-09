@@ -4,9 +4,9 @@
 
 #define R 3
 #define C 3
-#define init 1
+#define init 0
+#define solve 1
 #define edit 2
-#define solve 3
 #define finished 4
 
 /* after running a deterministic back-tracking algorithm to validate if the board is solvable,

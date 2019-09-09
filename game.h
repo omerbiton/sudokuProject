@@ -28,7 +28,7 @@ typedef struct Game{
 	int markErrors;
 	int numOfFilledCells;
 	Move currentMove;
-	int modeNum;
+	int mode;
 }Game;
 
 /* set fixed cell according to numOfFilledCells variable &
