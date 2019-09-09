@@ -33,17 +33,19 @@ void exitGame(Game game){
 }
 
 /* allocating memory for new board of 9*9 sudoku */
-Cell ** allocateMemForStandardBoard(){
+Cell ** createBoard(Game game){
+	int n = game.n;
+	int m = game.m;
 	int j;
-	/* allocating C*R*sizeOf(int) bytes for the board rows */
-	Cell** board = (Cell **)calloc(R*C, sizeof(Cell*));
+	/* allocating n*m*sizeOf(int) bytes for the board rows */
+	Cell** board = (Cell **)calloc(n*m, sizeof(Cell*));
 	if(board == NULL){
 		printf(ErrorCalloc);
 		exit(0);
 	}
-	/* allocating C*R*sizeOf(int) bytes for the board column in each row */
-	for(j=0; j<R*C; ++j){
-		board[j] = (Cell *)calloc(R*C, sizeof(Cell));
+	/* allocating n*m*sizeOf(int) bytes for the board column in each row */
+	for(j=0; j<n*m; ++j){
+		board[j] = (Cell *)calloc(n*m, sizeof(Cell));
 		if(board[j] == NULL){
 			printf(ErrorCalloc);
 			exit(0);
@@ -253,8 +255,10 @@ void initMode(){
 	exitMode();
 }
 
+
+
 /* start the game and interactively apply the users commands */
-void controlGame(int commands[], char str_path[]){
+void gameControl(int commands[], char str_path[]){
 	char input[256];
 	int command[4] = {0};
 	int *p = command;
