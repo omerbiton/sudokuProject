@@ -11,7 +11,7 @@
 
 
 /* parse the input string of the player during the game into commands on the board */
-void parseUserInput(int *command, char* path char input[]){
+void parseUserInput(int *command, char* path, char input[]){
 	/* define the separators of the user inputs */
 	   const char s[5] = " \t\r\n";
 	   char* token;
