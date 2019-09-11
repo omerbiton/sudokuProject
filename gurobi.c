@@ -6,9 +6,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "gameStructs.h"
-#include "gurobi_c.h"
-#include "mainAux.h"
+#include "game.h"
+#include "gurobi.h"
+#include "MainAux.h"
 
 void free_stuffs(int* ind, double* val, double* obj, char* vtype) {
 	/*Free the arrays of values needed for the calculation of the gurobi functions.Used upon finish or upon error*/
@@ -183,6 +183,13 @@ int findSol(int cols, int rows, int* filled, int amountFilled, double* sol) {
 	checkInitalize(vtype, "calloc");
 	obj = (double*) calloc(cols * rows * cols * rows * cols * rows, sizeof(double));
 	checkInitalize(obj, "calloc");
+	checkAllocatedMemory(ind, "calloc");
+	val = (double*) calloc(cols * rows, sizeof(double));
+	checkAllocatedMemory(val, "calloc");
+	vtype = (char*) calloc(cols * rows * cols * rows * cols * rows, sizeof(char));
+	checkAllocatedMemory(vtype, "calloc");
+	obj = (double*) calloc(cols * rows * cols * rows * cols * rows, sizeof(double));
+	checkAllocatedMemory(obj, "calloc");
 	/* Create environment - log file is mip1.log */
 	error = GRBloadenv(&env, "mip1.log");
 	if (error) {
