@@ -530,10 +530,3 @@ void gameControl(){
 	exitGame(game.board);
 }
 
-
-
-
-
-
-
-
