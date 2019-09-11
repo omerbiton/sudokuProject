@@ -106,6 +106,14 @@ int isSafe(Game game, int row, int col, int val){
 			instancesInBox(game, row - row%R , col - col%C, val) == 0;
 }
 
+void checkAllocatedMemory(void *pointer, char *cmd) {
+	if (pointer == NULL) {
+		printf("Error: %s has failed (memory allocation error)\n", cmd);
+		exit(0);
+	}
+}
+
+
 /* fill the array of the optional values of cell (row,col)
  * and save the number of optional values */
 void setOptionalValues(Cell** board, int row, int col){
