@@ -23,37 +23,76 @@
 
 /* Returns 1 if an assigned entry in the specified row matches the given number
  * or 0 else */
-int usedInRow(Cell** board, int row, int num){
-	int col;
-	/* go over all the cols and check if in cell (row, col) num already appears*/
-    for (col = 0; col < C*R; col++)
-        if (board[row][col].value == num)
-            return 1;
-    return 0;
+int instancesInRow(Game game, int row, int value){
+	int col, numOfInstances = 0;
+	int errorCells = (int*) calloc(game.n*game.m, sizeof(int));
+	/* go over all the columns of the row and count how many times value appears */
+    for (col = 0; col < game.n*game.m; col++) {
+        if (board[row][col].value == value){
+        	errorCells[col] = 1;
+        	board[row][col].error = 0;
+        	numOfInstances++;
+        }
+    }
+    if(numOfInstances > 1 ){
+    	for(col = 0; col < game.n*game.m, col++){
+    		if(errorCells[col] == 1){
+    			game.board[row][col].error = 1;
+    		}
+    	}
+    }
+    free(errorCells);
+    return numOfInstances;
 }
 
 /* Returns 1 if an assigned entry in the specified col matches the given number
  * or 0 else */
-int usedInCol(Cell** board, int col, int num){
-	int row;
-	/* go over all the rows and check if in cell (row, col) num already appears*/
-    for (row = 0; row < C*R; row++)
-        if (board[row][col].value == num)
-            return 1;
-    return 0;
+int instancesInCol(Game game, int col, int value){
+	int row,  numOfInstances = 0;
+	int errorCells = (int*) calloc(game.n*game.m, sizeof(int));
+	/* go over all the columns of the row and count how many times value appears */
+    for (row = 0; row < game.n*game.m; row++){
+        if (board[row][col].value == value){
+        	errorCells[row] = 1;
+			board[row][col].error = 0;
+			numOfInstances++;
+        }
+    }
+    if(numOfInstances > 1 ){
+		for(row = 0; row < game.n*game.m, row++){
+			if(errorCells[row] == 1){
+				game.board[row][col].error = 1;
+			}
+		}
+	}
+    free(errorCells);
+    return numOfInstances;
 }
 
 /* Returns 1 if an assigned entry in the specified 3x3 box matches the given number
  * or 0 else */
-int usedInBox(Cell** board, int boxStartRow, int boxStartCol, int num){
-	int row;
-	int col;
-	/* iterate all the cells in the box and check if in cell (row, col) num already appears*/
-    for (row = 0; row < R; row++)
-        for (col = 0; col < C; col++)
-            if (board[row+boxStartRow][col+boxStartCol].value == num)
-                return 1;
-    return 0;
+int instancesInBox(Game game, int boxStartRow, int boxStartCol, int value){
+	int row, col, i, numOfInstances = 0;
+	int errorCells = (int*) calloc(game.n*game.m, sizeof(int));
+	/* iterate all the cells in the box and counts how many time value appears*/
+    for (row = 0; row < game.n; row++){
+        for (col = 0; col < game.m; col++){
+            if (board[row+boxStartRow][col+boxStartCol].value == value){
+            	errorCells[row*game.m+col] = 1;
+            	board[row+boxStartRow][col+boxStartCol].error = 0;
+            	numOfInstances++;
+            }
+        }
+    }
+    if(numOfInstances > 1 ){
+   		for(i = 0; i < game.n*game.m, i++){
+   			if(errorCells[i] == 1){
+   				game.board[(i/game.m)+boxStartRow][(i%game.m)boxStartCol].error = 1;
+   			}
+   		}
+   	}
+    free(errorCells);
+    return numOfInstances;
 }
 
 /* Returns 1 if it will be legal to assign num to the given row,col location
@@ -61,10 +100,9 @@ int usedInBox(Cell** board, int boxStartRow, int boxStartCol, int num){
 int isSafe(Game game, int row, int col, int val){
     /* Check if 'val' is not already placed in current row,
        current column and current 3x3 box */
-    return usedInRow(game.board, row, val) == 0 &&
-           usedInCol(game.board, col, val) == 0 &&
-           usedInBox(game.board, row - row%R , col - col%C, val) == 0 &&
-		   game.board[row][col].fixed == 0;
+    return instancesInRow(game, row, val) == 0 &&
+    		instancesInCol(game, col, val) == 0 &&
+			instancesInBox(game, row - row%R , col - col%C, val) == 0;
 }
 
 /* fill the array of the optional values of cell (row,col)

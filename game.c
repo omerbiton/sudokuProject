@@ -12,7 +12,7 @@
 #define ErrorCalloc "Error: calloc has failed\n" /*error warning if calloc fails*/
 
 /* before exiting the game, we free the memory allocated to the board (2d array of Cell) */
-void freeGame(Game game){
+void freeGame(Game *game){
 	/*in case we passed NULL as the board */
 	if(!game)
 		return;
@@ -33,7 +33,7 @@ void freeBoard(Game game){
 
 /* a command for exiting the game
  * we free the allocated memory using freeBoard and exiting */
-void exitGame(Game game){
+void exitGame(Game *game){
 	freeGame(game);
 	printf("Exiting...\n");
 	exit(0);
@@ -47,7 +47,7 @@ Game* createGame(){
 }
 
 /* create a new board */
-Cell ** createBoard(Game game){
+Cell ** createBoard(Game *game){
 	int n = game.n;
 	int m = game.m;
 	int j;
@@ -69,7 +69,7 @@ Cell ** createBoard(Game game){
 }
 
 /* creating new move and add it to the moves list*/
-void setMove(Game game, int row, int col, int value, int prevValue){
+void setMove(Game *game, int row, int col, int value, int prevValue){
 	Move move = (Move *)calloc(1, sizeof(Move));
 	move.row = row;
 	move.col = col;
@@ -80,7 +80,7 @@ void setMove(Game game, int row, int col, int value, int prevValue){
 	game.currentMove = move;
 }
 
-void clearNextMoves(Game game){
+void clearNextMoves(Game *game){
 	Move nextMove = game.currentMove.nextMove;
 	Move moveToClear = game.currentMove.nextMove;
 	while(nextMove != NULL){
@@ -89,7 +89,7 @@ void clearNextMoves(Game game){
 		moveToClear = nextMove;
 	}
 }
-void clearPrevMoves(Game game){
+void clearPrevMoves(Game *game){
 	Move moveToClear = game.currentMove.prev;
 	Move prevMove = game.currentMove.prev;
 	while(moveToClear != NULL){
@@ -100,7 +100,7 @@ void clearPrevMoves(Game game){
 	free(game.currentMove);
 }
 
-void undo(Game game, int printSign){
+void undo(Game *game, int printSign){
 	/* if there was no move done yet */
 	if(game.currentMove == NULL){
 		printf(ErrorUndo);
@@ -212,7 +212,7 @@ int loadBoard(Game* game, char* filePath){
 
 }
 
-void saveBoard(Game game, char* filePath){
+void saveBoard(Game *game, char* filePath){
 	int row, col, val;
 	File *file;
 	file = fopen(filePath, "w");
@@ -240,37 +240,64 @@ void saveBoard(Game game, char* filePath){
 
 
 
-
-int validate(Game game, int printSign);
-
-/* create a copy of the board by allocating new memory for new board and copy all the data */
-Cell ** copyBoard(Cell** board){
-	int row;
-	int col;
-	/* allocating C*R*sizeOf(int) bytes for the board rows */
-	Cell** cpBaord = (Cell **)calloc(R*C, sizeof(Cell*));
-	if(cpBaord == NULL){
-		printf("%s",ErrorCalloc);
-		freeBoard(board);
-		exit(0);
-	}
-	for(row = 0; row < R*C; row++){
-		/* allocating C*R*sizeOf(int) bytes for the board rows */
-		cpBaord[row] = (Cell *)calloc(R*C, sizeof(Cell));
-		if(cpBaord[row] == NULL){
-			printf("%s",ErrorCalloc);
-			freeBoard(board);
-			exit(0);
-		}
-		/* copy the data from cell (row, col) of the original board to the new allocated board */
-		for(col = 0; col < R*C; col++){
-			cpBaord[row][col].value = board[row][col].value;
-			if(cpBaord[row][col].value != 0)
-				cpBaord[row][col].fixed = 1;
-		}
-	}
-	return cpBaord;
+/* a command the user can put to get a hint to a suitable value for cell (row,col)
+ * we use the saves values from the board build to return the suitable value */
+void hint(int row, int col, Cell ** board){
+	printf("Hint: set cell to %d\n", board[row-1][col-1].savedValue);
 }
+
+
+int validate(Game game, int printSign){
+	int ilpSolverRes;
+	if(isErrorneous(game)){
+		if (printSign){
+			printf("The board is erroneous.\n")
+		}
+		return 0;
+	}
+	else{
+		ilpSolverRes = ilpSolver(game);
+		if(ilpSolverRes == 1){
+			if(printSign){
+				printf("The board is valid and solvable, you may continue.\n");
+			}
+			return 1;
+		}
+		else{
+			if(printSign){
+				printf("The board is not solvable.\n");
+			}
+			return 0;
+		}
+	}
+}
+
+int isErrorneous(Game *game){
+	int row, col, i, j, val, errorMark = 0;
+	int N = game.n*game.m;
+	/* for each value from 1 to N, check there is no multiplicity */
+	for(val = 1; val <= game.n*game.n; val++){
+		for(row = 0; row < N, row++){
+			if(instancesInRow(game, row, val) > 1){
+				errorMark = 1;
+			}
+		}
+		for(col = 0; col < N, col++){
+			if(instancesInCol(game, col, val) > 1){
+				errorMark = 1;
+			}
+		}
+		for(i = 0; i < game.n; i++){
+			for(j = 0; j < game.m; j++){
+				if(instancesInBox(game, i*game.m, j*game.n, val) >1){
+					errorMark = 1;
+				}
+			}
+		}
+	}
+	return errorMark;
+}
+
 
 
 
@@ -313,7 +340,7 @@ void printBoard(Game *game) {
 
 
 /* a command the user can put to set value to cell (row,col) */
-void set(Game game, int row, int col, int value, int printSign){
+void set(Game *game, int row, int col, int value, int printSign){
 	int isSafe;
 	int prevValue = game.board[row][col].value;
 	/* check the cell is not fixed */
@@ -349,54 +376,6 @@ void hint(int row, int col, Cell ** board){
 	printf("Hint: set cell to %d\n", board[row-1][col-1].savedValue);
 }
 
-/* a command the user can put to vlidate that the board is solvable
- * we use deterministic back-tracking to check if it is solvable*/
-void validate(Cell ** board){
-	/* create a copy of the board to pass to the deterministic back-tracking algorithm */
-	Cell ** cpBaord = copyBoard(board);
-	/* ran the algorithm and check if it succeeded */
-	if (deterministicBackTracking(cpBaord, 0, 0) == 1){
-		printf("Validation passed: board is solvable\n");
-		updateStoredSolution(cpBaord, board);
-	}
-	else
-		printf("Validation failed: board is unsolvable\n");
-	/* free the memory allocated to the copy of the board */
-	freeBoard(cpBaord);
-}
-
-/* start the game and interactively apply the users commands
-void initMode(){
-	char input[256];
-	int command[4] = {0};
-	int *p = command;
-	char strPath[256];
-	char *path = strPath;
-	 scan the user commands till EOF
-	while (!feof(stdin)) {
-		fflush(stdin);
-		if (fgets(input, 256, stdin) != NULL) {
-			parseUserInput(p, path, input);
-			if (command[0] == 1 | command[0] == 2){ edit or solve command
-				if(command[0] == 1 && commands[1] == 1){  user didn't enter path in solveMode
-					printf("Error: invalid command\n");
-					break;
-				}
-				controlGame(command, strPath);
-			}
-			if(command[0] == 17) exit command
-				exitMode();
-			if(command[0] == 5) blank line
-				break;
-			if(command[0] == 6){ otherwise
-				printf("Error: invalid command\n");
-				break;
-			}
-		}
-	}
-	 when reaching EOF, exit the game
-	exitMode();
-}*/
 
 void mark_errors(int markErrorNum, int* error){
 	if(markErrorNum == 0 | markErrorNum == 1)
@@ -541,11 +520,4 @@ void gameControl(){
 	/* when reaching EOF, exit the game */
 	exitGame(game.board);
 }
-
-
-
-
-
-
-
 
