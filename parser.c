@@ -25,24 +25,29 @@ void parseUserInput(int *command, char* path, char input[]){
 	   else if(strcmp(token, "solve") == 0){
 		   /* walk through other tokens */
 		   command[0] = 1;
-		   while(i < 1) {
+		   while(i < 2) {
 			   token = strtok(NULL, s);
 			   if(token != NULL){
-				   path = token;
+				   if(i == 0)
+					   path = token;
+				   else
+					   command[0] = 19;
 			   }
-			   else{
-				   command[1] = 1;
-		          }
-		      i++;
+			   else if(token == NULL && i == 0)
+				   command[0] = 19;
 		   }
+		      i++;
 	   }
 	   else if(strcmp(token, "edit") == 0){
 		   /* walk through other tokens */
 		   command[0] = 2;
-		   while(i < 1) {
+		   while(i < 2) {
 			   token = strtok(NULL, s);
 			   if(token != NULL){
-				   path = token;
+				   if(i == 0)
+					   path = token;
+				   else
+					   command[0] = 19;
 			   }
 			   else{
 				   command[1] = 1;
@@ -53,28 +58,33 @@ void parseUserInput(int *command, char* path, char input[]){
 	   else if(strcmp(token, "mark_errors") == 0){
 		   /* walk through other tokens */
 		   command[0] = 3;
-		   while(i < 1) {
+		   while(i < 2) {
 			   token = strtok(NULL, s);
-			   if(token != NULL){
+			   if(token != NULL && i == 0)
 				   command[i+1] = atoi(token);
-			   }
-			   else{
+
+			   else if((token != NULL && i == 1) || (token == NULL && i ==0)){
 				   command[0] = 19;
 		          }
 		      i++;
 		   }
 	   }
 	   else if(strcmp(token, "print_board") == 0){
-		   /* walk through other tokens */
 		   command[0] = 4;
+		   /* walk through other tokens */
+		   while(i < 1) {
+			   token = strtok(NULL, s);
+			   if(token != NULL)
+				   command[0] = 19;
+		   }
 	   }
 	   else if(strcmp(token, "set") == 0){
 		   /* walk through other tokens */
 		   command[0] = 5;
-		   while(i < 3) {
+		   while(i < 4) {
 			   token = strtok(NULL, s);
-			   if(token != NULL){
-				   command[i+1] = atoi(token);
+			   if(token != NULL && i != 3){
+				   command[i+1] = atoi(token)-1;
 			   }
 			   else{
 				   command[0] = 19;
@@ -84,6 +94,11 @@ void parseUserInput(int *command, char* path, char input[]){
 	   }
 	   else if(strcmp(token, "validate") == 0){
 		   command[0] = 6;
+		   while(i < 1) {
+			   token = strtok(NULL, s);
+			   if(token != NULL)
+				   command[0] = 19;
+		   }
 	   }
 	   else if(strcmp(token, "guess") == 0){
 		   /* walk through other tokens */
@@ -115,33 +130,45 @@ void parseUserInput(int *command, char* path, char input[]){
 	   }
 	   else if(strcmp(token, "undo") == 0){
 		   command[0] = 9;
+		   while(i < 1) {
+			   token = strtok(NULL, s);
+			   if(token != NULL)
+				   command[0] = 19;
+		   }
 	   }
 	   else if(strcmp(token, "redo") == 0){
 		   command[0] = 10;
+		   while(i < 1) {
+			   token = strtok(NULL, s);
+			   if(token != NULL)
+				   command[0] = 19;
+		   }
 	   }
 	   else if(strcmp(token, "save") == 0){
 		   /* walk through other tokens */
 		   command[0] = 11;
-		   while(i < 1) {
+		   while(i < 2) {
 			   token = strtok(NULL, s);
 			   if(token != NULL){
-				   command[i+1] = atoi(token);
+				   if(i == 0)
+					   path = token;
+				   else
+					   command[0] = 19;
 			   }
-			   else{
+			   else if(token == NULL && i == 0)
 				   command[0] = 19;
-		          }
-		      i++;
 		   }
+		      i++;
 	   }
 	   else if(strcmp(token, "hint") == 0){
 		   command[0] = 12;
 		   /* walk through other tokens */
-		   while(i < 2) {
+		   while(i < 3) {
 			   token = strtok(NULL, s);
-			   if(token != NULL){
-				   command[i+1] = atoi(token);
+			   if(token != NULL && i != 2){
+				   command[i+1] = atoi(token)-1;
 			   }
-			   else{
+			   else if((i == 2 && token != NULL) || (token == NULL && i < 2)){
 				   command[0] = 19;
 		          }
 		      i++;
@@ -150,12 +177,12 @@ void parseUserInput(int *command, char* path, char input[]){
 	   else if(strcmp(token, "guess_hint") == 0){
 		   command[0] = 13;
 		   /* walk through other tokens */
-		   while(i < 2) {
+		   while(i < 3) {
 			   token = strtok(NULL, s);
-			   if(token != NULL){
-				   command[i+1] = atoi(token);
+			   if(token != NULL && i != 2){
+				   command[i+1] = atoi(token)-1;
 			   }
-			   else{
+			   else if((i == 2 && token != NULL) || (token == NULL && i < 2)){
 				   command[0] = 19;
 		          }
 		      i++;
@@ -163,15 +190,35 @@ void parseUserInput(int *command, char* path, char input[]){
 	   }
 	   else if(strcmp(token, "num_solutions") == 0){
 		   command[0] = 14;
+		   while(i < 1) {
+			   token = strtok(NULL, s);
+			   if(token != NULL)
+				   command[0] = 19;
+		   }
 	   }
 	   else if(strcmp(token, "autofill") == 0){
 		   command[0] = 15;
+		   while(i < 1) {
+			   token = strtok(NULL, s);
+			   if(token != NULL)
+				   command[0] = 19;
+		   }
 	   }
 	   else if(strcmp(token, "restart") == 0){
 		   command[0] = 16;
+		   while(i < 1) {
+			   token = strtok(NULL, s);
+			   if(token != NULL)
+				   command[0] = 19;
+		   }
 	   }
 	   else if(strcmp(token, "exit") == 0){
 		   command[0] = 17;
+		   while(i < 1) {
+			   token = strtok(NULL, s);
+			   if(token != NULL)
+				   command[0] = 19;
+		   }
 	   }
 	   else{
 		   command[0] = 19;

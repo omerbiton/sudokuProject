@@ -8,6 +8,7 @@ typedef struct Cell{
 	int savedValue; /* the value of the cell in the initialization of the game */
 	int numOfOptionalValues; /* the number of possible values that can be allocated to the cell */
 	int optionalValues[9]; /* an array with the possible values that can be allocated to the cell */
+	int error;
 }Cell;
 
 /* define a struct representing a move of the user in the game */

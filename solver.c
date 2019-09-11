@@ -119,3 +119,4 @@ int nonDeterministicBackTracking(Cell** board, int row, int col){
     }
     return 0;
 }
+
