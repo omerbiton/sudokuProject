@@ -12,7 +12,7 @@
 #define ErrorCalloc "Error: calloc has failed\n" /*error warning if calloc fails*/
 
 /* before exiting the game, we free the memory allocated to the board (2d array of Cell) */
-void freeGame(Game game){
+void freeGame(Game* game){
 	/*in case we passed NULL as the board */
 	if(!game)
 		return;
@@ -22,7 +22,7 @@ void freeGame(Game game){
 	/* we free the game */
 	free(game);
 }
-void freeBoard(Game game){
+void freeBoard(Game* game){
 	int j;
 	/* we free each calloc we made for the columns */
 	for(j = 0; j< game.n*game.m; j++)
@@ -33,7 +33,7 @@ void freeBoard(Game game){
 
 /* a command for exiting the game
  * we free the allocated memory using freeBoard and exiting */
-void exitGame(Game game){
+void exitGame(Game* game){
 	freeGame(game);
 	printf("Exiting...\n");
 	exit(0);
@@ -47,7 +47,7 @@ Game* createGame(){
 }
 
 /* create a new board */
-Cell ** createBoard(Game game){
+Cell ** createBoard(Game* game){
 	int n = game.n;
 	int m = game.m;
 	int j;
@@ -69,7 +69,7 @@ Cell ** createBoard(Game game){
 }
 
 /* creating new move and add it to the moves list*/
-void setMove(Game game, int row, int col, int value, int prevValue){
+void setMove(Game* game, int row, int col, int value, int prevValue){
 	Move move = (Move *)calloc(1, sizeof(Move));
 	move.row = row;
 	move.col = col;
@@ -344,54 +344,57 @@ void hint(int row, int col, Cell ** board){
 	printf("Hint: set cell to %d\n", board[row-1][col-1].savedValue);
 }
 
-/* a command the user can put to vlidate that the board is solvable
- * we use deterministic back-tracking to check if it is solvable*/
-void validate(Cell ** board){
-	/* create a copy of the board to pass to the deterministic back-tracking algorithm */
-	Cell ** cpBaord = copyBoard(board);
-	/* ran the algorithm and check if it succeeded */
-	if (deterministicBackTracking(cpBaord, 0, 0) == 1){
-		printf("Validation passed: board is solvable\n");
-		updateStoredSolution(cpBaord, board);
+
+int validate(Game game, int printSign){
+	int ilpSolverRes;
+	if(isErrorneous(game)){
+		if (printSign){
+			printf("The board is errorneous.\n")
+		}
+		return 0;
 	}
-	else
-		printf("Validation failed: board is unsolvable\n");
-	/* free the memory allocated to the copy of the board */
-	freeBoard(cpBaord);
+	else{
+		ilpSolverRes = ilpSolver(game);
+		if(ilpSolverRes == 1){
+			if(printSign){
+				printf("The board is valid and solvable, you may continue.\n");
+			}
+			return 1;
+		}
+		else{
+			if(printSign){
+				printf("The board is not solvable.\n");
+			}
+			return 0;
+		}
+	}
 }
 
-/* start the game and interactively apply the users commands
-void initMode(){
-	char input[256];
-	int command[4] = {0};
-	int *p = command;
-	char strPath[256];
-	char *path = strPath;
-	 scan the user commands till EOF
-	while (!feof(stdin)) {
-		fflush(stdin);
-		if (fgets(input, 256, stdin) != NULL) {
-			parseUserInput(p, path, input);
-			if (command[0] == 1 | command[0] == 2){ edit or solve command
-				if(command[0] == 1 && commands[1] == 1){  user didn't enter path in solveMode
-					printf("Error: invalid command\n");
-					break;
-				}
-				controlGame(command, strPath);
+int isErrorneous(Game game){
+	int row, col, i, j, val, errorMark = 0;
+	int N = game.n*game.m;
+	/* for each value from 1 to N, check there is no multiplicity */
+	for(val = 1; val <= game.n*game.n; val++){
+		for(row = 0; row < N, row++){
+			if(instancesInRow(game, row, val) > 1){
+				errorMark = 1;
 			}
-			if(command[0] == 17) exit command
-				exitMode();
-			if(command[0] == 5) blank line
-				break;
-			if(command[0] == 6){ otherwise
-				printf("Error: invalid command\n");
-				break;
+		}
+		for(col = 0; col < N, col++){
+			if(instancesInCol(game, col, val) > 1){
+				errorMark = 1;
+			}
+		}
+		for(i = 0; i < game.n; i++){
+			for(j = 0; j < game.m; j++){
+				if(instancesInBox(game, i*game.m, j*game.n, val) >1){
+					errorMark = 1;
+				}
 			}
 		}
 	}
-	 when reaching EOF, exit the game
-	exitMode();
-}*/
+	return errorMark;
+}
 
 void mark_errors(int markErrorNum, int* error){
 	if(markErrorNum == 0 | markErrorNum == 1)

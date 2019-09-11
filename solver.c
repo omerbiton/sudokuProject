@@ -12,9 +12,6 @@
 
 
 
-
-
-
 /* Takes a partially filled-in grid and attempts to assign values to
   all unassigned locations in a deterministic way (from 1 to 9), to meet the
   requirements for Sudoku solution (non-duplication across rows, columns, and boxes) */
@@ -71,68 +68,18 @@ int deterministicBackTracking(Cell** board, int row, int col){
 	}
 }
 
-/* Takes a partially filled-in grid and attempts to assign values to
-  all unassigned locations in a non-deterministic way (choosing between all the possible
-  options randomly), to meet the requirements for Sudoku solution */
-int nonDeterministicBackTracking(Cell** board, int row, int col){
-    int value = 0;
-    int chosenIndex = 0;
-    int nextIteration;
-
-    /* If there is no unassigned location, we are done */
-    if (row == C*R && col == 0){
-    	return 1; /* success! */
-    }
-
-    /* set all the possible assignments to the cell (row,col) */
-    setOptionalValues(board, row, col);
-
-    /* as long as there are optional values to the cell: */
-    while (board[row][col].numOfOptionalValues > 0){
-        /* if there is only one value option, assign it to the cell */
-    	if(board[row][col].numOfOptionalValues == 1){
-   	    	value = board[row][col].optionalValues[0];
-    	}
-    	else {
-    		/* try to assign number (randomly chosen) to the current cell */
-    		chosenIndex = rand()%board[row][col].numOfOptionalValues;
-    		value = board[row][col].optionalValues[chosenIndex];
-    	}
-		board[row][col].value = value;
-		fixOpptions(board, row, col, chosenIndex);
-
-		/* and go to the next cell */
-		if(col<(C*R-1)){
-			nextIteration = nonDeterministicBackTracking(board, row, col+1);
-		}
-		else if(col == C*R-1){
-			nextIteration = nonDeterministicBackTracking(board, row+1, 0);
-		}
-		/* if the next allocations worked and this one worked, return 1 */
-		if (nextIteration == 1){
-			return 1;
-		}
-		else{
-		/* failure, unmake and move to the next number */
-			board[row][col].value = 0;
-		}
-    }
-    return 0;
-}
-
 
 int ilpSolver(Game game){
 
 	int dim = game.n*game.m;
-	FILE *filePath = NULL;
 	GRBenv *env = NULL;
 	GRBmodel *model = NULL;
-	int ind[dim];
-	double val[dim];
-	double lb[dim*dim*dim];
-	char vtype[dim*dim*dim];
-	char *names[dim*dim*dim];
-	char namestorage[(dim+1)*dim*dim*dim];
+	int ind = (int*)calloc(dim, sizeof(int));
+	double val = (double*)calloc(dim, sizeof(double));
+	double lb = (double*)calloc(dim*dim*dim, sizeof(double));
+	char vtype = (char*)calloc(dim*dim*dim, sizeof(char));
+	char *names = (char**)calloc(dim*dim*dim, sizeof(char));
+	char namestorage = (char*)malloc((dim+1)*dim*dim*dim, sizeof(char));
 	char *cursor;
 	int optimstatus;
 	double objval;
@@ -143,7 +90,7 @@ int ilpSolver(Game game){
 	cursor = namestorage;
 	for(i = 0; i < dim; i++){
 		for(j = 0; j < dim; j++){
-			for(v = 0; v < dim; v++){
+			for(v = 1; v < dim+1; v++){
 				if(game.board[i][j].value == v){
 					lb[i*dim*dim+j*dim*dim+v] = 1;
 				}
@@ -226,26 +173,55 @@ int ilpSolver(Game game){
 		exitILP();
 	}
 	/* if there is a solution to the game */
-	if (optimstatus == GRB_OPTIMAL)
-	   return 1;
+	if (optimstatus == GRB_OPTIMAL){
+		/* free all calloc */
+		free(ind);
+		free(val);
+		free(lb);
+		free(vtype);
+		free(names);
+		free(namestorage);
+		return 1;
+	}
 	/* if there is no solution to the game */
-	else if (optimstatus == GRB_INF_OR_UNBD)
-	    return 0;
+	else if (optimstatus == GRB_INF_OR_UNBD){
+		/* free all calloc */
+		free(ind);
+		free(val);
+		free(lb);
+		free(vtype);
+		free(names);
+		free(namestorage);
+		return 0;
+	}
 	/* if the optimization was stopped early and we didn't reach a solution*/
-	else
-	    return 2;
-
+	else{
+		/* free all calloc */
+		free(ind);
+		free(val);
+		free(lb);
+		free(vtype);
+		free(names);
+		free(namestorage);
+		return 2;
+	}
 	/* Error reporting */
 	QUIT:
 	if (error) {
 		printf("ERROR: %s\n", GRBgeterrormsg(env));
 	    exit(1);
-	  }
-	fclose(fp);
+	}
 	/* Free model */
 	GRBfreemodel(model);
 	/* Free environment */
 	GRBfreeenv(env);
+	/* free all calloc */
+		free(ind);
+		free(val);
+		free(lb);
+		free(vtype);
+		free(names);
+		free(namestorage);
 	return 0;
 }
 
