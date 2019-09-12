@@ -71,7 +71,4 @@ void redo(Game game, int printSign){
 	}
 }
 
-=======
->>>>>>> refs/remotes/origin/master
->>>>>>> refs/remotes/origin/shachar
 

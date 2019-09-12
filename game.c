@@ -211,6 +211,7 @@ void mark_errors(int markErrorNum, int* error){
 	else
 		printf("Error: mark_errors can get only 0 or 1\n");
 }
+
 /* start the game and interactively apply the users commands */
 void gameControl(){
 	char input[256];
