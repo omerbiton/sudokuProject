@@ -38,6 +38,7 @@ void exitGame(Game* game){
 	printf("Exiting...\n");
 	exit(0);
 }
+
 Game* createGame(){
 	Game *game = (Game*)calloc(1, sizeof(Game));
 	game.n = 3;
@@ -68,65 +69,6 @@ Cell ** createBoard(Game* game){
 	return board;
 }
 
-/* creating new move and add it to the moves list*/
-void setMove(Game* game, int row, int col, int value, int prevValue){
-	Move move = (Move *)calloc(1, sizeof(Move));
-	move.row = row;
-	move.col = col;
-	move.value = value;
-	move.prevValue = prevValue;
-	move.lastMove = game.currentMove;
-	move.nextMove = NULL;
-	game.currentMove = move;
-}
-
-void clearNextMoves(Game game){
-	Move nextMove = game.currentMove.nextMove;
-	Move moveToClear = game.currentMove.nextMove;
-	while(nextMove != NULL){
-		nextMove = moveToClear.nextMove;
-		free(moveToClear);
-		moveToClear = nextMove;
-	}
-}
-void clearPrevMoves(Game game){
-	Move moveToClear = game.currentMove.prev;
-	Move prevMove = game.currentMove.prev;
-	while(moveToClear != NULL){
-		prevMove = moveToClear.prevMove;
-		free(moveToClear);
-		moveToClear = nextMove;
-	}
-	free(game.currentMove);
-}
-
-void undo(Game game, int printSign){
-	/* if there was no move done yet */
-	if(game.currentMove == NULL){
-		printf(ErrorUndo);
-	}
-	else{
-		int row = game.currentMove.row;
-		int col = game.currentMove.col;
-		int value = game.currentMove.prevValue;
-		set(game, row, col, prevValue, printSign);
-		game.currentMove = game.currentMove.lastMove;
-	}
-}
-
-void redo(Game game, int printSign){
-	if(game.currentMove.nextMove == NULL){
-		printf(ErrorRedo);
-	}
-	else{
-		int row = game.currentMove.nextMove.row;
-		int col = game.currentMove.nextMove.col;
-		int value = game.currentMove.nextMove.value;
-		set(game, row, col, prevValue, printSign);
-		game.currentMove = game.currentMove.nextMove;
-	}
-}
-
 /* a command the user can put while playing to restart the game */
 void reset(Game game){
 	Move move;
@@ -135,134 +77,6 @@ void reset(Game game){
 		undo(game, 0);
 		free(move);
 	}
-}
-
-
-int loadBoard(Game* game, char* filePath){
-	File *file;
-	char mStr[20], nStr[20], numStr[20];
-	int n, m, N, num, row=0, col=0, numOfFilledCells = 0 , numOfEmptyCells = 0, i = 0, fixedSign = 0;
-	file = fopen(filePath, "r");
-	if(file == NULL){ /* make sure we succeeded opening the file */
-		return(0);
-	}
-	/* read the first two nums from the file and check it fits */
-	if(fscanf(file, "%20s %20s", nStr, mStr) != 2 ){
-		ErrorIncorectFormat();
-		return(0);
-	}
-	else{
-		n = atoi(nStr);
-		m = atoi(mStr);
-		if(n <= 0 || m <= 0){
-			ErrorIncorectFormat();
-			return(0);
-		}
-		N = n*m;
-		else { /* read the file until you reach its end or you filled all the board */
-			while(input != EOF || numOfFilledCells+numOfEmptyCells > N){
-				/* initialize the array saving the next number and the fixedSign */
-				for(i = 0; i<20 ; i++){
-					numStr[i] = NULL;
-				}
-				fixedSign = 0;
-				/* scan the next number to put in the board */
-				fscanf(file, "%20s", numStr);
-				/* case the next number is zero (so it's an empty cell and can't be fixed) */
-				if(numStr == "0"){
-					num = 0;
-					/* increase the number of empty cells we filled */
-					numOfEmptyCells++;
-				}
-				else{ /* check if the number we read is legal and if it has dot following it*/
-					while(numStr[numLen] != NULL){
-						numLen++;
-					}
-					if(numStr[numLen-1] == '.'){
-						numStr[numLen-1] = NULL;
-						fixedSign = 1;
-					}
-					num = atoi(numStr);
-					if(num <= 0 || num > N){
-						ErrorIncorectFormat();
-						return(0);
-					}
-					else{
-						numOfFilledCells++;
-					}
-				}
-				game.board[row][col].value = num;
-				if(fixedSign == 1){
-					game.board[row][col].fixed = 1;
-				}
-			}
-			/* in case the number of cells wasn't suitable to the board dimensions */
-			if(numOfFilledCells+numOfEmptyCells != N){
-				ErrorIncorectFormat();
-				clearBoard(game);
-				return(0);
-			}
-		}
-		game->numOfFilledCells = numOfFilledCells;
-
-	}
-	fclose(filePath);
-
-}
-
-void saveBoard(Game game, char* filePath){
-	int row, col, val;
-	File *file;
-	file = fopen(filePath, "w");
-	if(game.mode == edit){
-		if(validate(game, 0) == 0){
-			Error();
-			return;
-		}
-	}
-	fprintf(file, "%d %d\n", game);
-	for(row=0; row<game.n ;row++){
-		for(col=0; col<game.m ;col++){
-			fprintf(file, "%d", game.board[row][col].value);
-			if(game.board[row][col].fixed == 1 || game.mode == edit){
-				fprintf(file, ".");
-			}
-			if(col<game.m-1){
-				fprintf(file, " ");
-			}
-		}
-		fprintf(file, "\n");
-	}
-	fclose(file);
-}
-
-/* create a copy of the board by allocating new memory for new board and copy all the data */
-Cell ** copyBoard(Cell** board){
-	int row;
-	int col;
-	/* allocating C*R*sizeOf(int) bytes for the board rows */
-	Cell** cpBaord = (Cell **)calloc(R*C, sizeof(Cell*));
-	if(cpBaord == NULL){
-		printf("%s",ErrorCalloc);
-		freeBoard(board);
-		exit(0);
-	}
-	for(row = 0; row < R*C; row++){
-		/* allocating C*R*sizeOf(int) bytes for the board rows */
-		cpBaord[row] = (Cell *)calloc(R*C, sizeof(Cell));
-		if(cpBaord[row] == NULL){
-			printf("%s",ErrorCalloc);
-			freeBoard(board);
-			exit(0);
-		}
-		/* copy the data from cell (row, col) of the original board to the new allocated board */
-		for(col = 0; col < R*C; col++){
-			cpBaord[row][col].value = board[row][col].value;
-			if(cpBaord[row][col].value != 0)
-				cpBaord[row][col].fixed = 1;
-		}
-	}
-	return cpBaord;
 }
 
 /* print the board in the required format */
