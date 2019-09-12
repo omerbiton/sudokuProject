@@ -236,11 +236,6 @@ void saveBoard(Game game, char* filePath){
 	fclose(file);
 }
 
-
-
-
-int validate(Game game, int printSign);
-
 /* create a copy of the board by allocating new memory for new board and copy all the data */
 Cell ** copyBoard(Cell** board){
 	int row;
