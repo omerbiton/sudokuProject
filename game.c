@@ -208,8 +208,19 @@ void mark_errors(int markErrorNum, int* error){
 
 void generate(Game *game, int x, int y){
 	fillXCells(game, x);
-	findSol(int m, int n, int* filled, int amountFilled, double* sol);
-
+	filledCells = (int*) cealloc(game->numOfFilledCells * 3, sizeof(int));
+	if(filledCelles == NULL){
+		printf("ERROR: memory allocation error.\n");
+		return NULL;
+	}
+	sol = (double*) calloc(N*N*N, sizeof(double));
+	if(filledCelles == NULL){
+		printf("ERROR: memory allocation error.\n");
+		return NULL;
+	}
+	findFilledCells(game, filledCells);/* fills the filledCells array with the data of the game filled cells */
+	solved = findSol(game->n, game->m, filledCells, game->numOfFilledCells, sol);
+	if*****
 }
 
 void fillXCells(Game *game, int x){
@@ -243,7 +254,6 @@ void clearFixedSigns(Game *game){
 	 *        int *filledCells - A pointer to an int array in size 3*numOfFilledCells to put the filled cells of the game
 	 * OUTPUT: An int array with all the filled cells found in the game board, each cell uses 3 spaces in the format x,y, and the current value inside the cell.*/
 int* findFilledCells(Game *game, int *filledCells) {
-	int row, col, index =  0;
 	int N = game->m * game->n;
 
 	for (row = 0; row < N; row++) {
