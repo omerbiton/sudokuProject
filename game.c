@@ -147,12 +147,6 @@ void set(Game game, int row, int col, int value, int printSign){
 	}
 }
 
-/* a command the user can put to get a hint to a suitable value for cell (row,col)
- * we use the saves values from the board build to return the suitable value */
-void hint(int row, int col, Cell ** board){
-	printf("Hint: set cell to %d\n", board[row-1][col-1].savedValue);
-}
-
 
 int validate(Game game, int printSign){
 	int ilpSolverRes;
@@ -211,6 +205,115 @@ void mark_errors(int markErrorNum, int* error){
 	else
 		printf("Error: mark_errors can get only 0 or 1\n");
 }
+
+void generate(Game *game, int x, int y){
+	fillXCells(game, x);
+	findSol(int m, int n, int* filled, int amountFilled, double* sol);
+
+}
+
+void fillXCells(Game *game, int x){
+	int row, col, val, i=0, N = game->n*game->m;
+	clearFixedSigns(game);
+	while(i<x){
+		row = rand()%N;
+		col = rand()%N;
+		if (game->board[row][col].value){
+			val = rand()%N;
+			if(isSafe(game, row, col, val)){
+				game->board[row][col].value = val;
+				game->board[row][col].fixed = 1;
+				i++;
+			}
+		}
+	}
+}
+
+void clearFixedSigns(Game *game){
+	int row, col;
+	for(row = 0; row < game->n; row++ ){
+		for(col = 0; col < game->m; col++ ){
+			game->board[row][col].fixed = 0;
+		}
+	}
+}
+
+/*The function finds all the filled cells in the game board and return them in an array such that every cells take 3 spaces, x,y, and the value in this cell.
+	 * INPUT: Game *game - A pointer to the game.
+	 *        int *filledCells - A pointer to an int array in size 3*numOfFilledCells to put the filled cells of the game
+	 * OUTPUT: An int array with all the filled cells found in the game board, each cell uses 3 spaces in the format x,y, and the current value inside the cell.*/
+int* findFilledCells(Game *game, int *filledCells) {
+	int row, col, index =  0;
+	int N = game->m * game->n;
+
+	for (row = 0; row < N; row++) {
+		for (col = 0; col < N; col++) {
+			if (game->board[j][i].value != 0) {
+				filledCells[index * 3] = row;
+				filledCells[index * 3 + 1] = col;
+				filledCells[index * 3 + 2] = game->board[row][col].value;
+			}
+		}
+	}
+	return filled;
+}
+
+/*The function extract the value that should be in the cell <x,y> according to the solution found with the ILP module that is contained in sol.
+	 * INPUT: double *sol - A double array in the size of (cols * rows)^3, where the solution found by the ILP is stored. Function should run only if the solution is valid.
+	 *        int x,y - Integers representing the column and row of the cell we want to know it's value according to the solution sol.
+	 *        int cols, rows - Integers representing the amount of columns and rows in each block of the game board.
+	 * OUTPUT: An integer which should be in the cell <x,y> according to the solution sol.*/
+int findval(double *sol, int x, int y, Game *game) {
+	int i, N = game->n*game->m;
+	for (i = 0; i < N; i++) {
+		if (sol[x*N + y*N* N + i])/*If the location has 1 then the value in the cell in the valid board is the location-1*/
+			return i + 1;
+	}
+	return -1;/*Value not found, there was no valid solution, shouldn't happen since the function runs only if a valid solution was found*/
+}
+
+/* a command the user can put to get a hint to a suitable value for cell (row,col)
+ * we use the saves values from the board build to return the suitable value */
+void hint(Game* game , int x , int y){
+	double *sol;
+	int *filledCells;
+	int val, solved, N;
+	N = game->n*game->m;
+	/* allocate an */
+	if(isErroneous(game)){
+		printf("ERROR: board is erroneous.\n");
+		return;
+	}
+	if(game->board[x][y].fixed){
+		printf("ERROR: cell is fixed.\n");
+		return;
+	}
+	if(game->board[x][y].value != 0){
+		printf("ERROR: cell already contains a value.\n");
+		return;
+	}
+	filledCells = (int*) cealloc(game->numOfFilledCells * 3, sizeof(int));
+	if(filledCelles == NULL){
+		printf("ERROR: memory allocation error.\n");
+		return NULL;
+	}
+	sol = (double*) calloc(N*N*N, sizeof(double));
+	if(filledCelles == NULL){
+		printf("ERROR: memory allocation error.\n");
+		return NULL;
+	}
+	findFilledCells(game, filledCells);/* fills the filledCells array with the data of the game filled cells */
+	solved = findSol(game->n, game->m, filledCells, game->numOfFilledCells, sol);
+	if (solved > 0) {/*Solution was found, we can give a hint*/
+		val = findval(sol, x, y, cols, rows);
+		printf("Hint: set cell to %d\n", val);
+	} else if (!solved) {
+		printf("Error: board is unsolvable\n");/*solved is 0 here so board is unsolveable*/
+	}/*If we didn't enter the conditions above, we had an error in the Gurobi library and a message was printed*/
+	free(filledCells);
+	free(sol);
+}
+
 /* start the game and interactively apply the users commands */
 void gameControl(){
 	char input[256];
