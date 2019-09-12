@@ -31,50 +31,32 @@ typedef struct Game{
 	int mode;
 }Game;
 
-/* set fixed cell according to numOfFilledCells variable &
- * solving the board using nonDeterministic BackTracking algorithm */
-void setBoard(Cell ** board, int numOfFilledCells);
+void freeGame(Game* game);
 
-/* a command for exiting the game
- * we free the allocated memory using freeBoard and exiting */
-void exitGame(Cell ** board);
+void freeBoard(Game* game);
 
-Cell ** createGame();
+void exitGame(Game* game);
 
-/* allocating memory for new board of sudoku */
-Cell ** initialBoard();
+Game* createGame();
 
-/* create a new board, fill if and set #n cells according to the user decision */
-Cell ** createBoard();
+Cell ** createBoard(Game* game);
 
-/* create a copy of the board by allocating new memory for new board and copy all the data */
-Cell ** copyBoard(Cell** board);
+void reset(Game game);
 
-/* print the board in the required format */
-void printBoard(Cell** board);
+void printBoard(Game* game);
 
-/* before exiting the game, we free the memory allocated to the board (2d array of Cell) */
-void freeBoard(Cell ** board);
+void set(Game game, int row, int col, int value, int printSign);
 
-/* a command the user can put to set value to cell (row,col) */
-void set(int row, int col, int value, Cell ** board);
-
-/* a command the user can put to get a hint to a suitable value for cell (row,col)
- * we use the saves values from the board build to return the suitable value */
 void hint(int row, int col, Cell ** board);
 
-/* a command the user can put to vlidate that the board is solvable
- * we use deterministic back-tracking to check if it is solvable*/
-void validate(Cell ** board);
+int validate(Game game, int printSign);
 
-/* a command the user can put while playing to restart the game */
-void restart(Cell ** board);
+int isErrorneous(Game game);
 
-/* in case we end the game and filled all the board,
- * we can only exit or restart */
-void endGame(Cell ** board);
+void mark_errors(int markErrorNum, int* error);
 
-/* start the game and interactively apply the users commands */
-void initMode();
+void gameControl();
+
+
 
 #endif
