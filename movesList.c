@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -68,4 +69,6 @@ void redo(Game game, int printSign){
 	}
 }
 
+=======
+>>>>>>> refs/remotes/origin/master
 
