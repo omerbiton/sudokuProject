@@ -7,8 +7,6 @@
 #include "solver.h"
 #include "game.h"
 
-
-#define SEP "----------------------------------\n"  /*separator for printBoard*/
 #define ErrorCalloc "Error: calloc has failed\n" /*error warning if calloc fails*/
 
 /* before exiting the game, we free the memory allocated to the board (2d array of Cell) */
@@ -227,27 +225,26 @@ void mark_errors(int markErrorNum, Game* game){
 
 void generate(Game *game, int x, int y){
 	int row, col, val, N = game->n*game->m, i;
-	/* if the board doesn't contain x empty cells */
-	if(N*N-game->numOfFilledCells < x){
-		pfintf("Error: the board does nor contain %d empty cells.\n", x);
+	if(N*N-game->numOfFilledCells < x){ 	/* if the board doesn't contain x empty cells */
+		printf("Error: the board does not contain %d empty cells.\n", x);
 		return;
 	}
-	/* fill x cells in the board. if there's a problem exit function */
-	if(fillXCells(game, x) == 0){
+	if(fillXCells(game, x) == 0){ 	/* fill x cells in the board. if there's a problem exit function */
 		return;
 	}
 	filledCells = (int*)calloc(game->numOfFilledCells * 3, sizeof(int));
 	checkAllocatedMemory("calloc", filledCells);
+
 	sol = (double*)calloc(N*N*N, sizeof(double));
 	checkAllocatedMemory("calloc", sol);
-	findFilledCells(game, filledCells);/* fills the filledCells array with the data of the game filled cells */
+
+	findFilledCells(game, filledCells); /* fills the filledCells array with the data of the game filled cells */
 	solved = findSol(game->n, game->m, filledCells, game->numOfFilledCells, sol);
-	/* if the board is unsolvable */
-	if(!solved){
-		/****************************************/
+	if(!solved){/* if the board is unsolvable */
+		/**/
 	}
-	/* put the solution of the ILP in the game-board */
-	for(i=0; i < N*N*N; i++){
+
+	for(i=0; i < N*N*N; i++){ /* put the solution of the ILP in the game-board */
 		if(sol[i] == 1){
 			col = i/(N*N);
 			row = (i-(col*N*N))/N;
@@ -256,14 +253,12 @@ void generate(Game *game, int x, int y){
 		}
 	}
 	clearFixedSigns(game, 1);
-	/* choose Y cells to keep */
-	for(i=0; i < y; i++){
+	for(i=0; i < y; i++){	/* choose Y cells to keep */
 		row = rand()%N;
 		col = rand()%N;
 		game->board[row][col].fixed = 1;
 	}
-	/* clear the rest of the cells */
-	clearFixedSign(game, 3);
+	clearFixedSign(game, 3);	/* clear the rest of the cells */
 }
 
 int fillXCells(Game *game, int x){
@@ -413,7 +408,22 @@ void edit(int command[], Game *game, char *path){
 			game.mode = edit;
 	}
 }
-
+void save(int command[],Game *game, char *path) {
+	if(commands[1] == 1){/*no path in command*/
+		printf("Error: invalid command, have to enter a path\n");
+		return 0;
+	}
+	if (game->mode == edit) {
+		if (isErroneous(game)) {
+			printf("Error: board contains erroneous values\n");
+			return;
+		} else if (!validate(game)) {
+			printf("Error: board validation failed\n");
+			return;
+		}
+	}
+	saveToFile(game, path);
+}
 /* start the game and interactively apply the users commands */
 void gameControl(){
 	char input[256];
@@ -483,7 +493,7 @@ void gameControl(){
 				break;
 			case save:
 				if(game.mode != init)
-					save(game);
+					save(game, path);
 				else
 					printf("Error: invalid command\n");
 				break;
