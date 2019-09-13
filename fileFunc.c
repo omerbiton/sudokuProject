@@ -27,43 +27,43 @@ int loadBoard(Game* game, char* filePath){
 			return(0);
 		}
 		N = n*m;
-		else { /* read the file until you reach its end or you filled all the board */
-			while(input != EOF || numOfFilledCells+numOfEmptyCells > N){
-				/* initialize the array saving the next number and the fixedSign */
-				for(i = 0; i<20 ; i++){
-					numStr[i] = NULL;
+		 /* read the file until you reach its end or you filled all the board */
+		while(input != EOF || numOfFilledCells+numOfEmptyCells > N){
+			/* initialize the array saving the next number and the fixedSign */
+			for(i = 0; i<20 ; i++){
+				numStr[i] = NULL;
+			}
+			fixedSign = 0;
+			/* scan the next number to put in the board */
+			fscanf(file, "%20s", numStr);
+			/* case the next number is zero (so it's an empty cell and can't be fixed) */
+			if(numStr == "0"){
+				num = 0;
+				/* increase the number of empty cells we filled */
+				numOfEmptyCells++;
+			}
+			else{ /* check if the number we read is legal and if it has dot following it*/
+				while(numStr[numLen] != NULL){
+					numLen++;
 				}
-				fixedSign = 0;
-				/* scan the next number to put in the board */
-				fscanf(file, "%20s", numStr);
-				/* case the next number is zero (so it's an empty cell and can't be fixed) */
-				if(numStr == "0"){
-					num = 0;
-					/* increase the number of empty cells we filled */
-					numOfEmptyCells++;
+				if(numStr[numLen-1] == '.'){
+					numStr[numLen-1] = NULL;
+					fixedSign = 1;
 				}
-				else{ /* check if the number we read is legal and if it has dot following it*/
-					while(numStr[numLen] != NULL){
-						numLen++;
-					}
-					if(numStr[numLen-1] == '.'){
-						numStr[numLen-1] = NULL;
-						fixedSign = 1;
-					}
-					num = atoi(numStr);
-					if(num <= 0 || num > N){
-						ErrorIncorectFormat();
-						fclose(filePath);
-						return(0);
-					}
-					else{
-						numOfFilledCells++;
-					}
+				num = atoi(numStr);
+				if(num <= 0 || num > N){
+					ErrorIncorectFormat();
+					fclose(filePath);
+					return(0);
 				}
-				game.board[row][col].value = num;
-				if(fixedSign == 1){
-					game.board[row][col].fixed = 1;
+				else{
+					numOfFilledCells++;
 				}
+			}
+			game.board[row][col].value = num;
+			if(fixedSign == 1){
+				game.board[row][col].fixed = 1;
+			}
 			}
 			/* in case the number of cells wasn't suitable to the board dimensions */
 			if(numOfFilledCells+numOfEmptyCells != N){
@@ -74,13 +74,11 @@ int loadBoard(Game* game, char* filePath){
 			}
 		}
 		game->numOfFilledCells = numOfFilledCells;
-
-	}
 	fclose(filePath);
 
 }
 
-void saveBoard(Game *game, char* filePath){
+void saveToFile(Game *game, char* filePath){
 	int row, col, val;
 	File *file;
 	file = fopen(filePath, "w");

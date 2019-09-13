@@ -7,8 +7,6 @@
 #include "solver.h"
 #include "game.h"
 
-
-#define SEP "----------------------------------\n"  /*separator for printBoard*/
 #define ErrorCalloc "Error: calloc has failed\n" /*error warning if calloc fails*/
 
 /* before exiting the game, we free the memory allocated to the board (2d array of Cell) */
@@ -41,6 +39,7 @@ void exitGame(Game* game){
 
 Game* createGame(){
 	Game *game = (Game*)calloc(1, sizeof(Game));
+	checkAllocatedMemory("calloc", game);
 	game.n = 3;
 	game.m = 3;
 	game.board = createBoard(game);
@@ -54,6 +53,7 @@ Cell ** createBoard(Game* game){
 	int j;
 	/* allocating n*m*sizeOf(int) bytes for the board rows */
 	Cell** board = (Cell **)calloc(n*m, sizeof(Cell*));
+	checkAllocatedMemory("calloc", board);
 	if(board == NULL){
 		printf(ErrorCalloc);
 		exit(0);
@@ -61,10 +61,7 @@ Cell ** createBoard(Game* game){
 	/* allocating n*m*sizeOf(int) bytes for the board column in each row */
 	for(j=0; j<n*m; ++j){
 		board[j] = (Cell *)calloc(n*m, sizeof(Cell));
-		if(board[j] == NULL){
-			printf(ErrorCalloc);
-			exit(0);
-		}
+		checkAllocatedMemory("calloc", board[j]);
 	}
 	return board;
 }
@@ -80,162 +77,191 @@ void reset(Game* game){
 }
 
 /* print the board in the required format */
-void printBoard(Game* game){
-	int n = game.n;
-	int m = game.m;
-	int N = n*m;
-	int row;
-	int col;
-    while(doubleNM != 0)
-    {
-        // n = n/10
-    	doubleNM /= 10;
-        ++maxSpacePerCell;
-    }
-	/* print each row*/
-	for(row = 0; row<n*m; row++){
-		/* before rows that are multiple of 3, print the separator row*/
-		if(row%n ==0)
-			printf(SEP);
-		for(col = 0; col<n*m; col++){
-			/* before cols that are multiple of 3, print the separator sign */
-			if(col%m == 0)
-				printf("| ");
-			/* print the value of the cell according to if it is fixed or filled */
-			if(game->board[row][col].fixed == 0){
-				if(game->board[row][col].value != 0){
-					printf(" %d ", board[row][col].value);
+void printBoard(Game *game) {
+	int i, j;
+	if(game.mode == init){
+		printf("Error: invalid command\n");
+	}else{
+
+		for (i = 0; i < game->m * game->n; i++) {
+			if (i % game->rows == 0) {
+				for (j = 0; j < game->n * game->m * 4 + game->n + 1; j++) {
+					printf("-");
 				}
-				else{
+				printf("\n");
+			}
+			for (j = 0; j < game->n * game->m; j++) {
+				if (j == 0) {
+					printf("|");
+				}
+				printf(" ");
+				if (game->board[j][i].value == 0) {
 					printf("   ");
+				} else {
+					printf("%2d", game->board[j][i].value);
+					if (game->board[j][i].fixed)
+						printf(".");
+					else if ((game->board[j][i].error) && ((game->markErrors) || (game->mode == edit))) /*should add error check for the cell*/
+						printf("*");
+					else
+						printf(" ");
 				}
+				if (j % game->m == game->n - 1)
+					printf("|");
 			}
-			else{
-				if(game->mode == 2) /*ignore fixed in edit mode*/
-					printf(" %d ", game->board[row][col].value);
-				else
-					printf("%d. ", game->board[row][col].value);
-			}
+			printf("\n");
 		}
-		printf("|\n");
+		for (j = 0; j < game->n * game->m * 4 + game->n + 1; j++) {
+			printf("-");
+		}
+		printf("\n");
 	}
-	printf(SEP);
 }
 
 /* a command the user can put to set value to cell (row,col) */
 void set(Game *game, int row, int col, int value, int printSign){
-	/* check the cell is not fixed */
-	if(game->board[row-1][col-1].fixed ==1){
-		printf("Error: cell is fixed\n");
-		return;
-	}
-	/* set the value to the suitable cell and print the board */
-	if((value == 0)||(isSafe(game.board, row-1, col-1, value) == 1)){
-		clearNextMoves(game);
-		setMove(game, row, col, value, game->board[row-1][col-1].value);
-		game->board[row-1][col-1].value = value;
-		if(printSign == 1){
-			printBoard(game->board);
+	if(game.mode == init){
+		printf("Error: invalid command\n");
+	}else{
+		/* check the cell is not fixed */
+		if(game->board[row-1][col-1].fixed ==1){
+			printf("Error: cell is fixed\n");
+			return;
 		}
-	}
-	else
-		printf("Error: value is invalid\n");
-	/* check if the board is full. if it is, end the game */
-	if(findUnassignedLocation(game.board) == 0){
-		printf("Puzzle solved successfully\n");
-		endGame(game.board);
+		/* set the value to the suitable cell and print the board */
+		if((value == 0)||(isSafe(game.board, row-1, col-1, value) == 1)){
+			clearNextMoves(game);
+			setMove(game, row, col, value, game->board[row-1][col-1].value);
+			game->board[row-1][col-1].value = value;
+			if(printSign == 1){
+				printBoard(game->board);
+			}
+		}
+		else
+			printf("Error: value is invalid\n");
+		/* check if the board is full. if it is, end the game */
+		if(findUnassignedLocation(game.board) == 0){
+			printf("Puzzle solved successfully\n");
+			endGame(game.board);
+		}
 	}
 }
 
 
 int validate(Game *game, int printSign){
 	int ilpSolverRes;
-	if(isErrorneous(game)){
-		if (printSign){
-			printf("The board is errorneous.\n")
-		}
-		return 0;
+	if(game.mode == init){
+		printf("Error: invalid command\n");
 	}
 	else{
-		ilpSolverRes = ilpSolver(game);
-		if(ilpSolverRes == 1){
-			if(printSign){
-				printf("The board is valid and solvable, you may continue.\n");
-			}
-			return 1;
-		}
-		else{
-			if(printSign){
-				printf("The board is not solvable.\n");
+		if(isErrorneous(game)){
+			if (printSign){
+				printf("The board is errorneous.\n");
 			}
 			return 0;
 		}
+		else{
+			ilpSolverRes = ilpSolver(game);
+			if(ilpSolverRes == 1){
+				if(printSign){
+					printf("The board is valid and solvable, you may continue.\n");
+				}
+				return 1;
+			}
+			else{
+				if(printSign){
+					printf("The board is not solvable.\n");
+				}
+				return 0;
+			}
+		}
+	}
+}
+void undo(Game game, int printSign){
+	/* if there was no move done yet */
+	if(game.currentMove == NULL){
+		printf(ErrorUndo);
+	}
+	else{
+		int row = game.currentMove.row;
+		int col = game.currentMove.col;
+		int value = game.currentMove.prevValue;
+		set(game, row, col, prevValue, printSign);
+		game.currentMove = game.currentMove.lastMove;
+	}
+}
+
+void redo(Game game, int printSign){
+	if(game.currentMove.nextMove == NULL){
+		printf(ErrorRedo);
+	}
+	else{
+		int row = game.currentMove.nextMove.row;
+		int col = game.currentMove.nextMove.col;
+		int value = game.currentMove.nextMove.value;
+		set(game, row, col, prevValue, printSign);
+		game.currentMove = game.currentMove.nextMove;
 	}
 }
 
 int isErrorneous(Game *game){
-	int row, col, i, j, val, errorMark = 0;
+	int row, col, i, j, val;
 	int N = game->n*game->m;
-	/* for each value from 1 to N, check there is no multiplicity */
-	for(val = 1; val <= game->n*game->n; val++){
-		for(row = 0; row < N, row++){
+	/* for each value from 1 to N, check if there is multiplicity in each row, col, box */
+	for(val = 1; val <= game->n*game->m; val++){
+		for(row = 0; row < N; row++){
 			if(instancesInRow(game, row, val) > 1){
-				errorMark = 1;
+				return 1;
 			}
 		}
-		for(col = 0; col < N, col++){
+		for(col = 0; col < N; col++){
 			if(instancesInCol(game, col, val) > 1){
-				errorMark = 1;
+				return 1;
 			}
 		}
 		for(i = 0; i < game->n; i++){
 			for(j = 0; j < game->m; j++){
 				if(instancesInBox(game, i*game->m, j*game->n, val) >1){
-					errorMark = 1;
+					return 1;
 				}
 			}
 		}
 	}
-	return errorMark;
+	return 0;
 }
 
-void mark_errors(int markErrorNum, int* error){
-	if(markErrorNum == 0 | markErrorNum == 1)
-		*error = markErrorNum;
+void mark_errors(int markErrorNum, Game* game){
+	if(game.mode != solve)
+		printf("Error: invalid command\n");
+	else if(markErrorNum == 0 | markErrorNum == 1)
+		game.markErrors = markErrorNum;
 	else
 		printf("Error: mark_errors can get only 0 or 1\n");
 }
 
 void generate(Game *game, int x, int y){
 	int row, col, val, N = game->n*game->m, i;
-	/* if the board doesn't contain x empty cells */
-	if(N*N-game->numOfFilledCells < x){
-		pfintf("Error: the board does nor contain %d empty cells.\n", x);
+	if(N*N-game->numOfFilledCells < x){ 	/* if the board doesn't contain x empty cells */
+		printf("Error: the board does not contain %d empty cells.\n", x);
 		return;
 	}
-	/* fill x cells in the board. if there's a problem exit function */
-	if(fillXCells(game, x) == 0){
+	if(fillXCells(game, x) == 0){ 	/* fill x cells in the board. if there's a problem exit function */
 		return;
 	}
-	filledCells = (int*) cealloc(game->numOfFilledCells * 3, sizeof(int));
-	if(filledCelles == NULL){
-		printf("ERROR: memory allocation error.\n");
-		return NULL;
-	}
-	sol = (double*) calloc(N*N*N, sizeof(double));
-	if(filledCelles == NULL){
-		printf("ERROR: memory allocation error.\n");
-		return NULL;
-	}
-	findFilledCells(game, filledCells);/* fills the filledCells array with the data of the game filled cells */
+	filledCells = (int*)calloc(game->numOfFilledCells * 3, sizeof(int));
+	checkAllocatedMemory("calloc", filledCells);
+
+	sol = (double*)calloc(N*N*N, sizeof(double));
+	checkAllocatedMemory("calloc", sol);
+
+	findFilledCells(game, filledCells); /* fills the filledCells array with the data of the game filled cells */
 	solved = findSol(game->n, game->m, filledCells, game->numOfFilledCells, sol);
-	/* if the board is unsolvable */
-	if(!solved){
-		/****************************************/
+	if(!solved){/* if the board is unsolvable */
+		/**/
 	}
-	/* put the solution of the ILP in the game-board */
-	for(i=0; i<N*N*N; ii=++){
-		if(sol[i]==1){
+
+	for(i=0; i < N*N*N; i++){ /* put the solution of the ILP in the game-board */
+		if(sol[i] == 1){
 			col = i/(N*N);
 			row = (i-(col*N*N))/N;
 			val = ((i-col*N*N)-row*N);
@@ -243,14 +269,12 @@ void generate(Game *game, int x, int y){
 		}
 	}
 	clearFixedSigns(game, 1);
-	/* choose Y cells to keep */
-	for(i=0; i < y; i++){
+	for(i=0; i < y; i++){	/* choose Y cells to keep */
 		row = rand()%N;
 		col = rand()%N;
 		game->board[row][col].fixed = 1;
 	}
-	/* clear the rest of the cells */
-	clearFixedSign(game, 3);
+	clearFixedSign(game, 3);	/* clear the rest of the cells */
 }
 
 int fillXCells(Game *game, int x){
@@ -316,21 +340,29 @@ void clearFixedSigns(Game *game, int fixedNum){
 	 * INPUT: Game *game - A pointer to the game.
 	 *        int *filledCells - A pointer to an int array in size 3*numOfFilledCells to put the filled cells of the game
 	 * OUTPUT: An int array with all the filled cells found in the game board, each cell uses 3 spaces in the format x,y, and the current value inside the cell.*/
-int* findFilledCells(Game *game, int *filledCells) {
-	int N = game->m * game->n;
 
+int* findFilledCells(Game *game, int *numOfFilled) {
+	/*The function finds all the filled cells in the game board and return them in an array such that every cells take 3 spaces, x,y, and the value in this cell.
+	 * INPUT: gameState *metaBoard - A pointer to a gameState with allocated board and with valid values.
+	 *        int *amountFilled - A pointer to an integer that will be updated with the amount of filled cells the function have found.
+	 * OUTPUT: An int array with all the filled cells found in the game board, each cell uses 3 spaces in the format x,y, and the current value inside the cell.*/
+	int *filled = { 0 };
+	int row, col;
+	int N = game->m * game->n;
 	for (row = 0; row < N; row++) {
-		for (col = 0; col < N; col++) {
-			if (game->board[j][i].value != 0) {
-				filledCells[index * 3] = row;
-				filledCells[index * 3 + 1] = col;
-				filledCells[index * 3 + 2] = game->board[row][col].value;
+		for (col = 0; N; col++) {
+			if (game->board[row][col].value != 0) {
+				filled = (int*) realloc(filled, ((*numOfFilled) + 1) * 3 * sizeof(int));
+				checkAllocatedMemory(filled, "realloc");
+				filled[(*numOfFilled) * 3] = row;
+				filled[(*numOfFilled) * 3 + 1] = col;
+				filled[(*numOfFilled) * 3 + 2] = game->board[row][col].value;
+				(*numOfFilled)++;
 			}
 		}
 	}
 	return filled;
 }
-
 /*The function extract the value that should be in the cell <x,y> according to the solution found with the ILP module that is contained in sol.
 	 * INPUT: double *sol - A double array in the size of (cols * rows)^3, where the solution found by the ILP is stored. Function should run only if the solution is valid.
 	 *        int x,y - Integers representing the column and row of the cell we want to know it's value according to the solution sol.
@@ -365,16 +397,10 @@ void hint(Game* game , int x , int y){
 		printf("ERROR: cell already contains a value.\n");
 		return;
 	}
-	filledCells = (int*) cealloc(game->numOfFilledCells * 3, sizeof(int));
-	if(filledCelles == NULL){
-		printf("ERROR: memory allocation error.\n");
-		return NULL;
-	}
-	sol = (double*) calloc(N*N*N, sizeof(double));
-	if(filledCelles == NULL){
-		printf("ERROR: memory allocation error.\n");
-		return NULL;
-	}
+	filledCells = (int*) calloc(game->numOfFilledCells * 3, sizeof(int));
+	checkAllocatedMemory("calloc", filledCells);
+	sol = (double*)calloc(N*N*N, sizeof(double));
+	checkAllocatedMemory("calloc", sol);
 	findFilledCells(game, filledCells);/* fills the filledCells array with the data of the game filled cells */
 	solved = findSol(game->n, game->m, filledCells, game->numOfFilledCells, sol);
 	if (solved > 0) {/*Solution was found, we can give a hint*/
@@ -386,7 +412,59 @@ void hint(Game* game , int x , int y){
 	free(filledCells);
 	free(sol);
 }
-
+void solve(int command[], Game *game, char *path){
+	int success;
+	if(commands[1] == 1)/*no path in command*/
+		printf("Error: invalid command, have to enter a path\n");
+	else{
+		success = loadBoard(game, path);
+		if(success == 1)
+			game.mode = solve;
+	}
+}
+void edit(int command[], Game *game, char *path){
+	int success;
+	if(commands[1] == 1) /*no path in command*/
+		createBoard(game);
+	else{
+		success = loadBoard(game, path);
+		if(success == 1)
+			game.mode = edit;
+	}
+}
+void save(int command[],Game *game, char *path) {
+	if(commands[1] == 1){/*no path in command*/
+		printf("Error: invalid command, have to enter a path\n");
+		return 0;
+	}
+	if (game->mode == edit) {
+		if (isErroneous(game)) {
+			printf("Error: board contains erroneous values\n");
+			return;
+		} else if (!validate(game)) {
+			printf("Error: board validation failed\n");
+			return;
+		}
+	}
+	saveToFile(game, path);
+}
+void guess(Game * game, int threshold){
+	if(game.mode != solve){
+		printf("Error: invalid command\n");
+	}
+	else{
+}
+int num_solutions(Game* game){
+	int numSolutions;
+	if(game.mode == init)
+		printf("Error: invalid command\n");
+	else if(isErrorneous(game))
+		printf("Error: board contains erroneous values\n");
+	else{
+		numSolutions = backTracking(game);
+		return numSolutions;
+	}
+}
 /* start the game and interactively apply the users commands */
 void gameControl(){
 	char input[256];
@@ -403,112 +481,87 @@ void gameControl(){
 		if (fgets(input, 1024, stdin) != NULL) {
 			parseUserInput(p, path, input);
 			switch (command[0]) {
-			case 1: /*solve command */
-				if(commands[1] == 1)
-					printf("Error: invalid command, have to enter a path\n");
-				else{
-					/*should load an existing board*/
-					game.mode=1;
-				}
+			case solve:
+				solve(p, game, path);
 				break;
-			case 2: /*edit command */
-				if(markErrors == 0)
-					markErrors = 1;
-				if(commands[1] == 1){
-					/*should load a new board 9x9*/
-				}
-				else{
-					/*should load an existing board*/
-				}
-				game.mode=2;
+			case edit:
+				edit(p, game, path);
 				break;
-			case 3: /*mark_errors command*/
-				if(game.mode == 1)
-					mark_errors(command[1], error);
+			case mark_errors:
+				mark_errors(command[1], error);
+				break;
+			case printBoard:
+				printBoard(game);
+				break;
+			case set:
+				set(game);
+				break;
+			case validate:
+				validate(game);
+				break;
+			case guess:
+				guess(game, command[1]);
+				break;
+			case generate:
+				if(game.mode == edit)
+					generate(game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 4: /*printBoard command*/
-				if(game.mode != 0)
-					printBoard(game);
+			case undo:
+				if(game.mode != init)
+					undo(game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 5: /*set command */
-				if(game.mode != 0)
-					set(game.board);
-				break;
-			case 6: /*validate command*/
-				if(game.mode != 0)
-					validate(game.board);
+			case redo:
+				if(game.mode != init)
+					redo(game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 7: /*guess command*/
-				if(game.mode == 1)
-					guess(game.board);
-				else
-					printf("Error: invalid command\n");
-			case 8: /*generate command*/
-				if(game.mode == 2)
-					generate(game.board);
+			case save:
+				if(game.mode != init)
+					save(game, path);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 9: /*undo command*/
-				if(game.mode != 0)
-					undo(game.board);
+			case hint:
+				if(game.mode == edit)
+					hint(command[2], command[1], game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 10: /*redo command*/
-				if(game.mode != 0)
-					redo(game.board);
+			case guess_hint:
+				if(game.mode == edit)
+					hint(command[2], command[1], game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 11: /*save command*/
-				if(game.mode != 0)
-					save(game.board);
+			case num_solutions:
+				if(game.mode != init)
+					num_solutions(game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 12: /*hint command*/
-				if(game.mode == 2)
-					hint(command[2], command[1], game.board);
+			case autofill:
+				if(game.mode == edit)
+					autofill(game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 13: /*guess_hint command*/
-				if(game.mode == 2)
-					hint(command[2], command[1], game.board);
+			case reset:
+				if(game.mode != init)
+					reset(game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 14: /*num_solutions command*/
-				if(game.mode != 0)
-					num_solutions(game.board);
-				else
-					printf("Error: invalid command\n");
+			case exit:
+				exitGame(game);
 				break;
-			case 15: /*autofill command*/
-				if(game.mode == 2)
-					autofill(game.board);
-				else
-					printf("Error: invalid command\n");
+			case blank_line:
 				break;
-			case 16: /*reset command*/
-				if(game.mode != 0)
-					reset(game.board);
-				else
-					printf("Error: invalid command\n");
-				break;
-			case 17: /*exit command*/
-				exitGame(game.board);
-				break;
-			case 18: /*blank line */
-				break;
-			case 19: /*otherwise */
+			case otherwise:
 				printf("Error: invalid command\n");
 				break;
 			}

@@ -125,10 +125,10 @@ void parseUserInput(int *command, char* path, char input[]){
 		   while(i < 1) {
 			   token = strtok(NULL, s);
 			   if(token != NULL){
-				   command[i+1] = atoi(token);
+				   path = token;
 			   }
 			   else{
-				   command[0] = 19;
+				   command[1] = 1;
 		          }
 		      i++;
 		   }
