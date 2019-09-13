@@ -1,6 +1,9 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> refs/heads/shachar
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -71,4 +74,9 @@ void redo(Game game, int printSign){
 	}
 }
 
+<<<<<<< HEAD
+=======
+=======
+>>>>>>> refs/remotes/origin/master
+>>>>>>> refs/heads/shachar
 

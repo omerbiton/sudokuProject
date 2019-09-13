@@ -70,10 +70,10 @@ Cell ** createBoard(Game* game){
 }
 
 /* a command the user can put while playing to restart the game */
-void reset(Game game){
+void reset(Game* game){
 	Move move;
-	while(game.currentMove != NULL){
-		move = game.currentMove;
+	while(game->currentMove != NULL){
+		move = game->currentMove;
 		undo(game, 0);
 		free(move);
 	}
@@ -123,19 +123,19 @@ void printBoard(Game* game){
 }
 
 /* a command the user can put to set value to cell (row,col) */
-void set(Game game, int row, int col, int value, int printSign){
+void set(Game *game, int row, int col, int value, int printSign){
 	/* check the cell is not fixed */
-	if(game.board[row-1][col-1].fixed ==1){
+	if(game->board[row-1][col-1].fixed ==1){
 		printf("Error: cell is fixed\n");
 		return;
 	}
 	/* set the value to the suitable cell and print the board */
 	if((value == 0)||(isSafe(game.board, row-1, col-1, value) == 1)){
 		clearNextMoves(game);
-		setMove(game, row, col, value, game.board[row-1][col-1].value);
-		game.board[row-1][col-1].value = value;
+		setMove(game, row, col, value, game->board[row-1][col-1].value);
+		game->board[row-1][col-1].value = value;
 		if(printSign == 1){
-			printBoard(game.board);
+			printBoard(game->board);
 		}
 	}
 	else
@@ -147,14 +147,8 @@ void set(Game game, int row, int col, int value, int printSign){
 	}
 }
 
-/* a command the user can put to get a hint to a suitable value for cell (row,col)
- * we use the saves values from the board build to return the suitable value */
-void hint(int row, int col, Cell ** board){
-	printf("Hint: set cell to %d\n", board[row-1][col-1].savedValue);
-}
 
-
-int validate(Game game, int printSign){
+int validate(Game *game, int printSign){
 	int ilpSolverRes;
 	if(isErrorneous(game)){
 		if (printSign){
@@ -179,11 +173,11 @@ int validate(Game game, int printSign){
 	}
 }
 
-int isErrorneous(Game game){
+int isErrorneous(Game *game){
 	int row, col, i, j, val, errorMark = 0;
-	int N = game.n*game.m;
+	int N = game->n*game->m;
 	/* for each value from 1 to N, check there is no multiplicity */
-	for(val = 1; val <= game.n*game.n; val++){
+	for(val = 1; val <= game->n*game->n; val++){
 		for(row = 0; row < N, row++){
 			if(instancesInRow(game, row, val) > 1){
 				errorMark = 1;
@@ -194,9 +188,9 @@ int isErrorneous(Game game){
 				errorMark = 1;
 			}
 		}
-		for(i = 0; i < game.n; i++){
-			for(j = 0; j < game.m; j++){
-				if(instancesInBox(game, i*game.m, j*game.n, val) >1){
+		for(i = 0; i < game->n; i++){
+			for(j = 0; j < game->m; j++){
+				if(instancesInBox(game, i*game->m, j*game->n, val) >1){
 					errorMark = 1;
 				}
 			}
@@ -212,6 +206,190 @@ void mark_errors(int markErrorNum, int* error){
 		printf("Error: mark_errors can get only 0 or 1\n");
 }
 
+<<<<<<< HEAD
+=======
+void generate(Game *game, int x, int y){
+	int row, col, val, N = game->n*game->m, i;
+	/* if the board doesn't contain x empty cells */
+	if(N*N-game->numOfFilledCells < x){
+		pfintf("Error: the board does nor contain %d empty cells.\n", x);
+		return;
+	}
+	/* fill x cells in the board. if there's a problem exit function */
+	if(fillXCells(game, x) == 0){
+		return;
+	}
+	filledCells = (int*) cealloc(game->numOfFilledCells * 3, sizeof(int));
+	if(filledCelles == NULL){
+		printf("ERROR: memory allocation error.\n");
+		return NULL;
+	}
+	sol = (double*) calloc(N*N*N, sizeof(double));
+	if(filledCelles == NULL){
+		printf("ERROR: memory allocation error.\n");
+		return NULL;
+	}
+	findFilledCells(game, filledCells);/* fills the filledCells array with the data of the game filled cells */
+	solved = findSol(game->n, game->m, filledCells, game->numOfFilledCells, sol);
+	/* if the board is unsolvable */
+	if(!solved){
+		/****************************************/
+	}
+	/* put the solution of the ILP in the game-board */
+	for(i=0; i<N*N*N; ii=++){
+		if(sol[i]==1){
+			col = i/(N*N);
+			row = (i-(col*N*N))/N;
+			val = ((i-col*N*N)-row*N);
+			game->board[row][col].value = val;
+		}
+	}
+	clearFixedSigns(game, 1);
+	/* choose Y cells to keep */
+	for(i=0; i < y; i++){
+		row = rand()%N;
+		col = rand()%N;
+		game->board[row][col].fixed = 1;
+	}
+	/* clear the rest of the cells */
+	clearFixedSign(game, 3);
+}
+
+int fillXCells(Game *game, int x){
+	int row, col, val, i=0, j, N = game->n*game->m, counter = 0;
+	while(i<x){
+		if(counter >= 1000){
+			printf("ERROR: error in the puzzle generator, can't execute the operation\n");
+			return 0;
+		}
+		row = rand()%N;
+		col = rand()%N;
+		/* if the cell is free (has 0 as value) */
+		/* set all the possible assignments to the cell (row,col) */
+		setOptionalValues(game->board, row, col);
+		if(game->board[row][col].numOfOptionalValues > 0){
+			if(game->board[row][col].numOfOptionalValues == 1){
+				val = game->board[row][col].optionalValues[0];
+			}
+			else{
+				j = rand()%game->board[row][col].numOfOptionalValues;
+				val = game->board[row][col].optionalValues[j];
+			}
+			game->board[row][col].value = val;
+			game->board[row][col].fixed = 2;
+			i++;
+		}
+		/* if we chose a cell that has no optional value, restart the all process*/
+		else {
+			clearFixedSigns(game, 2);
+			i=0;
+			counter++;
+		}
+	}
+	return 1;
+}
+
+/* goes throw all the board cells
+ * case fixedNum == 1 : unfix the cell and set the fix field to 0
+ * case fixedNum == 2 : clear the cell, set the value and the fix fields to 0
+ * case fixedNum == 3 : set the value of the unfixed cells to 0*/
+void clearFixedSigns(Game *game, int fixedNum){
+	int row, col;
+	for(row = 0; row < game->n; row++ ){
+		for(col = 0; col < game->m; col++ ){
+			if(game->board[row][col].fixed ==1 && fixedNum != 0){
+				game->board[row][col].fixed = 0;
+			}
+			else if(game->board[row][col].fixed == 2 && fixedNum == 2){
+				game->board[row][col].value = 0;
+				game->board[row][col].fixed = 0;
+			}
+			else if(fixedNum == 3){
+				if(game->board[row][col].fixed = 0){
+					game->board[row][col].value = 0;
+				}
+			}
+
+		}
+	}
+}
+
+/*The function finds all the filled cells in the game board and return them in an array such that every cells take 3 spaces, x,y, and the value in this cell.
+	 * INPUT: Game *game - A pointer to the game.
+	 *        int *filledCells - A pointer to an int array in size 3*numOfFilledCells to put the filled cells of the game
+	 * OUTPUT: An int array with all the filled cells found in the game board, each cell uses 3 spaces in the format x,y, and the current value inside the cell.*/
+int* findFilledCells(Game *game, int *filledCells) {
+	int N = game->m * game->n;
+
+	for (row = 0; row < N; row++) {
+		for (col = 0; col < N; col++) {
+			if (game->board[j][i].value != 0) {
+				filledCells[index * 3] = row;
+				filledCells[index * 3 + 1] = col;
+				filledCells[index * 3 + 2] = game->board[row][col].value;
+			}
+		}
+	}
+	return filled;
+}
+
+/*The function extract the value that should be in the cell <x,y> according to the solution found with the ILP module that is contained in sol.
+	 * INPUT: double *sol - A double array in the size of (cols * rows)^3, where the solution found by the ILP is stored. Function should run only if the solution is valid.
+	 *        int x,y - Integers representing the column and row of the cell we want to know it's value according to the solution sol.
+	 *        int cols, rows - Integers representing the amount of columns and rows in each block of the game board.
+	 * OUTPUT: An integer which should be in the cell <x,y> according to the solution sol.*/
+int findval(double *sol, int x, int y, Game *game) {
+	int i, N = game->n*game->m;
+	for (i = 0; i < N; i++) {
+		if (sol[x*N + y*N* N + i])/*If the location has 1 then the value in the cell in the valid board is the location-1*/
+			return i + 1;
+	}
+	return -1;/*Value not found, there was no valid solution, shouldn't happen since the function runs only if a valid solution was found*/
+}
+
+/* a command the user can put to get a hint to a suitable value for cell (row,col)
+ * we use the saves values from the board build to return the suitable value */
+void hint(Game* game , int x , int y){
+	double *sol;
+	int *filledCells;
+	int val, solved, N;
+	N = game->n*game->m;
+	/* allocate an */
+	if(isErroneous(game)){
+		printf("ERROR: board is erroneous.\n");
+		return;
+	}
+	if(game->board[x][y].fixed){
+		printf("ERROR: cell is fixed.\n");
+		return;
+	}
+	if(game->board[x][y].value != 0){
+		printf("ERROR: cell already contains a value.\n");
+		return;
+	}
+	filledCells = (int*) cealloc(game->numOfFilledCells * 3, sizeof(int));
+	if(filledCelles == NULL){
+		printf("ERROR: memory allocation error.\n");
+		return NULL;
+	}
+	sol = (double*) calloc(N*N*N, sizeof(double));
+	if(filledCelles == NULL){
+		printf("ERROR: memory allocation error.\n");
+		return NULL;
+	}
+	findFilledCells(game, filledCells);/* fills the filledCells array with the data of the game filled cells */
+	solved = findSol(game->n, game->m, filledCells, game->numOfFilledCells, sol);
+	if (solved > 0) {/*Solution was found, we can give a hint*/
+		val = findval(sol, x, y, cols, rows);
+		printf("Hint: set cell to %d\n", val);
+	} else if (!solved) {
+		printf("Error: board is unsolvable\n");/*solved is 0 here so board is unsolveable*/
+	}/*If we didn't enter the conditions above, we had an error in the Gurobi library and a message was printed*/
+	free(filledCells);
+	free(sol);
+}
+
+>>>>>>> refs/heads/shachar
 /* start the game and interactively apply the users commands */
 void gameControl(){
 	char input[256];
