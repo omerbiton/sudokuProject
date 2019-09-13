@@ -193,29 +193,29 @@ void redo(Game game, int printSign){
 }
 
 int isErrorneous(Game *game){
-	int row, col, i, j, val, errorMark = 0;
+	int row, col, i, j, val;
 	int N = game->n*game->m;
-	/* for each value from 1 to N, check there is no multiplicity */
-	for(val = 1; val <= game->n*game->n; val++){
-		for(row = 0; row < N, row++){
+	/* for each value from 1 to N, check if there is multiplicity in each row, col, box */
+	for(val = 1; val <= game->n*game->m; val++){
+		for(row = 0; row < N; row++){
 			if(instancesInRow(game, row, val) > 1){
-				errorMark = 1;
+				return 1;
 			}
 		}
-		for(col = 0; col < N, col++){
+		for(col = 0; col < N; col++){
 			if(instancesInCol(game, col, val) > 1){
-				errorMark = 1;
+				return 1;
 			}
 		}
 		for(i = 0; i < game->n; i++){
 			for(j = 0; j < game->m; j++){
 				if(instancesInBox(game, i*game->m, j*game->n, val) >1){
-					errorMark = 1;
+					return 1;
 				}
 			}
 		}
 	}
-	return errorMark;
+	return 0;
 }
 
 void mark_errors(int markErrorNum, Game* game){
