@@ -446,6 +446,17 @@ void guess(Game * game, int threshold){
 	}
 	else{
 }
+int num_solutions(Game* game){
+	int numSolutions;
+	if(game.mode == init)
+		printf("Error: invalid command\n");
+	else if(isErrorneous(game))
+		printf("Error: board contains erroneous values\n");
+	else{
+		numSolutions = backTracking(game);
+		return numSolutions;
+	}
+}
 /* start the game and interactively apply the users commands */
 void gameControl(){
 	char input[256];
@@ -475,14 +486,13 @@ void gameControl(){
 				printBoard(game);
 				break;
 			case set:
-				if(game.mode != init)
-					set(game);
+				set(game);
 				break;
 			case validate:
 				validate(game);
 				break;
 			case guess:
-				guess(game);
+				guess(game, command[1]);
 				break;
 			case generate:
 				if(game.mode == edit)

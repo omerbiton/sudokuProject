@@ -224,6 +224,10 @@ int ilpSolver(Game game){
 		free(namestorage);
 	return 0;
 }
+int backTracking(Game *game){
+	Cell ** board
+
+}
 
 
 void autofill(Game *game){
