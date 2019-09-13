@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-=======
->>>>>>> refs/heads/shachar
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -17,7 +11,8 @@
 
 /* creating new move and add it to the moves list*/
 void setMove(Game* game, int row, int col, int value, int prevValue){
-	Move move = (Move *)calloc(1, sizeof(Move));
+	Move* move = (Move*)calloc(1, sizeof(Move));
+	checkAllocatedMemory(move, "calloc");
 	move.row = row;
 	move.col = col;
 	move.value = value;
@@ -47,36 +42,4 @@ void clearPrevMoves(Game game){
 	free(game.currentMove);
 }
 
-void undo(Game game, int printSign){
-	/* if there was no move done yet */
-	if(game.currentMove == NULL){
-		printf(ErrorUndo);
-	}
-	else{
-		int row = game.currentMove.row;
-		int col = game.currentMove.col;
-		int value = game.currentMove.prevValue;
-		set(game, row, col, prevValue, printSign);
-		game.currentMove = game.currentMove.lastMove;
-	}
-}
-
-void redo(Game game, int printSign){
-	if(game.currentMove.nextMove == NULL){
-		printf(ErrorRedo);
-	}
-	else{
-		int row = game.currentMove.nextMove.row;
-		int col = game.currentMove.nextMove.col;
-		int value = game.currentMove.nextMove.value;
-		set(game, row, col, prevValue, printSign);
-		game.currentMove = game.currentMove.nextMove;
-	}
-}
-
-<<<<<<< HEAD
-=======
-=======
->>>>>>> refs/remotes/origin/master
->>>>>>> refs/heads/shachar
 
