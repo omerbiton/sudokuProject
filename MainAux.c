@@ -21,6 +21,13 @@
 
 */
 
+void checkAllocatedMemory(char *cmd, void *pointer) {
+	if (pointer == NULL) {
+		printf("Error: %s has failed (memory allocation error)\n", cmd);
+		exit(0);
+	}
+}
+
 /* Returns 1 if an assigned entry in the specified row matches the given number
  * or 0 else */
 int instancesInRow(Game game, int row, int value){
@@ -107,19 +114,19 @@ int isSafe(Game game, int row, int col, int val){
 
 /* fill the array of the optional values of cell (row,col)
  * and save the number of optional values */
-void setOptionalValues(Cell** board, int row, int col){
+void setOptionalValues(Game game, int row, int col, int N){
 	int index = 0;
 	int num;
 	/* check if its safe to put each of the values between 1 to 9 in cell (row,col)
 	 * if it is add this value to the optionalValues array */
-	for(num = 1; num <= (C*R); num++){
-		if (isSafe(board, row, col, num) != 0){
-			board[row][col].optionalValues[index] = num;
+	for(num = 1; num <= N; num++){
+		if (isSafe(game, row, col, num) != 0){
+			game->board[row][col].optionalValues[index] = num;
 			index++;
 		}
 	}
 	/* save the number of optional values */
-	board[row][col].numOfOptionalValues = index;
+	game->board[row][col].numOfOptionalValues = index;
 }
 
 /* Removes from the optional values array the element in index 'chosenIndex'
