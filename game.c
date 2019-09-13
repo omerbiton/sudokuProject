@@ -70,10 +70,10 @@ Cell ** createBoard(Game* game){
 }
 
 /* a command the user can put while playing to restart the game */
-void reset(Game game){
+void reset(Game* game){
 	Move move;
-	while(game.currentMove != NULL){
-		move = game.currentMove;
+	while(game->currentMove != NULL){
+		move = game->currentMove;
 		undo(game, 0);
 		free(move);
 	}
@@ -123,19 +123,19 @@ void printBoard(Game* game){
 }
 
 /* a command the user can put to set value to cell (row,col) */
-void set(Game game, int row, int col, int value, int printSign){
+void set(Game *game, int row, int col, int value, int printSign){
 	/* check the cell is not fixed */
-	if(game.board[row-1][col-1].fixed ==1){
+	if(game->board[row-1][col-1].fixed ==1){
 		printf("Error: cell is fixed\n");
 		return;
 	}
 	/* set the value to the suitable cell and print the board */
 	if((value == 0)||(isSafe(game.board, row-1, col-1, value) == 1)){
 		clearNextMoves(game);
-		setMove(game, row, col, value, game.board[row-1][col-1].value);
-		game.board[row-1][col-1].value = value;
+		setMove(game, row, col, value, game->board[row-1][col-1].value);
+		game->board[row-1][col-1].value = value;
 		if(printSign == 1){
-			printBoard(game.board);
+			printBoard(game->board);
 		}
 	}
 	else
@@ -148,7 +148,7 @@ void set(Game game, int row, int col, int value, int printSign){
 }
 
 
-int validate(Game game, int printSign){
+int validate(Game *game, int printSign){
 	int ilpSolverRes;
 	if(isErrorneous(game)){
 		if (printSign){
@@ -173,11 +173,11 @@ int validate(Game game, int printSign){
 	}
 }
 
-int isErrorneous(Game game){
+int isErrorneous(Game *game){
 	int row, col, i, j, val, errorMark = 0;
-	int N = game.n*game.m;
+	int N = game->n*game->m;
 	/* for each value from 1 to N, check there is no multiplicity */
-	for(val = 1; val <= game.n*game.n; val++){
+	for(val = 1; val <= game->n*game->n; val++){
 		for(row = 0; row < N, row++){
 			if(instancesInRow(game, row, val) > 1){
 				errorMark = 1;
@@ -188,9 +188,9 @@ int isErrorneous(Game game){
 				errorMark = 1;
 			}
 		}
-		for(i = 0; i < game.n; i++){
-			for(j = 0; j < game.m; j++){
-				if(instancesInBox(game, i*game.m, j*game.n, val) >1){
+		for(i = 0; i < game->n; i++){
+			for(j = 0; j < game->m; j++){
+				if(instancesInBox(game, i*game->m, j*game->n, val) >1){
 					errorMark = 1;
 				}
 			}
@@ -207,7 +207,16 @@ void mark_errors(int markErrorNum, int* error){
 }
 
 void generate(Game *game, int x, int y){
-	fillXCells(game, x);
+	int row, col, val, N = game->n*game->m, i;
+	/* if the board doesn't contain x empty cells */
+	if(N*N-game->numOfFilledCells < x){
+		pfintf("Error: the board does nor contain %d empty cells.\n", x);
+		return;
+	}
+	/* fill x cells in the board. if there's a problem exit function */
+	if(fillXCells(game, x) == 0){
+		return;
+	}
 	filledCells = (int*) cealloc(game->numOfFilledCells * 3, sizeof(int));
 	if(filledCelles == NULL){
 		printf("ERROR: memory allocation error.\n");
@@ -220,31 +229,85 @@ void generate(Game *game, int x, int y){
 	}
 	findFilledCells(game, filledCells);/* fills the filledCells array with the data of the game filled cells */
 	solved = findSol(game->n, game->m, filledCells, game->numOfFilledCells, sol);
-	if*****
-}
-
-void fillXCells(Game *game, int x){
-	int row, col, val, i=0, N = game->n*game->m;
-	clearFixedSigns(game);
-	while(i<x){
-		row = rand()%N;
-		col = rand()%N;
-		if (game->board[row][col].value){
-			val = rand()%N;
-			if(isSafe(game, row, col, val)){
-				game->board[row][col].value = val;
-				game->board[row][col].fixed = 1;
-				i++;
-			}
+	/* if the board is unsolvable */
+	if(!solved){
+		/****************************************/
+	}
+	/* put the solution of the ILP in the game-board */
+	for(i=0; i<N*N*N; ii=++){
+		if(sol[i]==1){
+			col = i/(N*N);
+			row = (i-(col*N*N))/N;
+			val = ((i-col*N*N)-row*N);
+			game->board[row][col].value = val;
 		}
 	}
+	clearFixedSigns(game, 1);
+	/* choose Y cells to keep */
+	for(i=0; i < y; i++){
+		row = rand()%N;
+		col = rand()%N;
+		game->board[row][col].fixed = 1;
+	}
+	/* clear the rest of the cells */
+	clearFixedSign(game, 3);
 }
 
-void clearFixedSigns(Game *game){
+int fillXCells(Game *game, int x){
+	int row, col, val, i=0, j, N = game->n*game->m, counter = 0;
+	while(i<x){
+		if(counter >= 1000){
+			printf("ERROR: error in the puzzle generator, can't execute the operation\n");
+			return 0;
+		}
+		row = rand()%N;
+		col = rand()%N;
+		/* if the cell is free (has 0 as value) */
+		/* set all the possible assignments to the cell (row,col) */
+		setOptionalValues(game->board, row, col);
+		if(game->board[row][col].numOfOptionalValues > 0){
+			if(game->board[row][col].numOfOptionalValues == 1){
+				val = game->board[row][col].optionalValues[0];
+			}
+			else{
+				j = rand()%game->board[row][col].numOfOptionalValues;
+				val = game->board[row][col].optionalValues[j];
+			}
+			game->board[row][col].value = val;
+			game->board[row][col].fixed = 2;
+			i++;
+		}
+		/* if we chose a cell that has no optional value, restart the all process*/
+		else {
+			clearFixedSigns(game, 2);
+			i=0;
+			counter++;
+		}
+	}
+	return 1;
+}
+
+/* goes throw all the board cells
+ * case fixedNum == 1 : unfix the cell and set the fix field to 0
+ * case fixedNum == 2 : clear the cell, set the value and the fix fields to 0
+ * case fixedNum == 3 : set the value of the unfixed cells to 0*/
+void clearFixedSigns(Game *game, int fixedNum){
 	int row, col;
 	for(row = 0; row < game->n; row++ ){
 		for(col = 0; col < game->m; col++ ){
-			game->board[row][col].fixed = 0;
+			if(game->board[row][col].fixed ==1 && fixedNum != 0){
+				game->board[row][col].fixed = 0;
+			}
+			else if(game->board[row][col].fixed == 2 && fixedNum == 2){
+				game->board[row][col].value = 0;
+				game->board[row][col].fixed = 0;
+			}
+			else if(fixedNum == 3){
+				if(game->board[row][col].fixed = 0){
+					game->board[row][col].value = 0;
+				}
+			}
+
 		}
 	}
 }
