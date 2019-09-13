@@ -21,16 +21,16 @@
 
 */
 
-void checkAllocatedMemory(char *cmd, void *pointer) {
+void checkAllocatedMemory(char *type, void *pointer) {
 	if (pointer == NULL) {
-		printf("Error: %s has failed (memory allocation error)\n", cmd);
+		printf("Error: %s has failed (memory allocation error)\n", type);
 		exit(0);
 	}
 }
 
 /* Returns 1 if an assigned entry in the specified row matches the given number
  * or 0 else */
-int instancesInRow(Game game, int row, int value){
+int instancesInRow(Game *game, int row, int value){
 	int col, numOfInstances = 0;
 	int errorCells = (int*) calloc(game.n*game.m, sizeof(int));
 	/* go over all the columns of the row and count how many times value appears */
@@ -54,7 +54,7 @@ int instancesInRow(Game game, int row, int value){
 
 /* Returns 1 if an assigned entry in the specified col matches the given number
  * or 0 else */
-int instancesInCol(Game game, int col, int value){
+int instancesInCol(Game *game, int col, int value){
 	int row,  numOfInstances = 0;
 	int errorCells = (int*) calloc(game.n*game.m, sizeof(int));
 	/* go over all the columns of the row and count how many times value appears */
@@ -78,7 +78,7 @@ int instancesInCol(Game game, int col, int value){
 
 /* Returns 1 if an assigned entry in the specified 3x3 box matches the given number
  * or 0 else */
-int instancesInBox(Game game, int boxStartRow, int boxStartCol, int value){
+int instancesInBox(Game *game, int boxStartRow, int boxStartCol, int value){
 	int row, col, i, numOfInstances = 0;
 	int errorCells = (int*) calloc(game.n*game.m, sizeof(int));
 	/* iterate all the cells in the box and counts how many time value appears*/
@@ -104,7 +104,7 @@ int instancesInBox(Game game, int boxStartRow, int boxStartCol, int value){
 
 /* Returns 1 if it will be legal to assign num to the given row,col location
  * or 0 if not */
-int isSafe(Game game, int row, int col, int val){
+int isSafe(Game *game, int row, int col, int val){
     /* Check if 'val' is not already placed in current row,
        current column and current 3x3 box */
     return instancesInRow(game, row, val) == 0 &&
@@ -114,7 +114,7 @@ int isSafe(Game game, int row, int col, int val){
 
 /* fill the array of the optional values of cell (row,col)
  * and save the number of optional values */
-void setOptionalValues(Game game, int row, int col, int N){
+void setOptionalValues(Game *game, int row, int col, int N){
 	int index = 0;
 	int num;
 	/* check if its safe to put each of the values between 1 to 9 in cell (row,col)

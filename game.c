@@ -340,21 +340,29 @@ void clearFixedSigns(Game *game, int fixedNum){
 	 * INPUT: Game *game - A pointer to the game.
 	 *        int *filledCells - A pointer to an int array in size 3*numOfFilledCells to put the filled cells of the game
 	 * OUTPUT: An int array with all the filled cells found in the game board, each cell uses 3 spaces in the format x,y, and the current value inside the cell.*/
-int* findFilledCells(Game *game, int *filledCells) {
-	int N = game->m * game->n;
 
+int* findFilledCells(Game *game, int *numOfFilled) {
+	/*The function finds all the filled cells in the game board and return them in an array such that every cells take 3 spaces, x,y, and the value in this cell.
+	 * INPUT: gameState *metaBoard - A pointer to a gameState with allocated board and with valid values.
+	 *        int *amountFilled - A pointer to an integer that will be updated with the amount of filled cells the function have found.
+	 * OUTPUT: An int array with all the filled cells found in the game board, each cell uses 3 spaces in the format x,y, and the current value inside the cell.*/
+	int *filled = { 0 };
+	int row, col;
+	int N = game->m * game->n;
 	for (row = 0; row < N; row++) {
-		for (col = 0; col < N; col++) {
-			if (game->board[j][i].value != 0) {
-				filledCells[index * 3] = row;
-				filledCells[index * 3 + 1] = col;
-				filledCells[index * 3 + 2] = game->board[row][col].value;
+		for (col = 0; N; col++) {
+			if (game->board[row][col].value != 0) {
+				filled = (int*) realloc(filled, ((*numOfFilled) + 1) * 3 * sizeof(int));
+				checkAllocatedMemory(filled, "realloc");
+				filled[(*numOfFilled) * 3] = row;
+				filled[(*numOfFilled) * 3 + 1] = col;
+				filled[(*numOfFilled) * 3 + 2] = game->board[row][col].value;
+				(*numOfFilled)++;
 			}
 		}
 	}
 	return filled;
 }
-
 /*The function extract the value that should be in the cell <x,y> according to the solution found with the ILP module that is contained in sol.
 	 * INPUT: double *sol - A double array in the size of (cols * rows)^3, where the solution found by the ILP is stored. Function should run only if the solution is valid.
 	 *        int x,y - Integers representing the column and row of the cell we want to know it's value according to the solution sol.
