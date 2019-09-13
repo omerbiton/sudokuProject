@@ -79,87 +79,101 @@ void reset(Game* game){
 /* print the board in the required format */
 void printBoard(Game *game) {
 	int i, j;
-	for (i = 0; i < game->m * game->n; i++) {
-		if (i % game->rows == 0) {
-			for (j = 0; j < game->n * game->m * 4 + game->n + 1; j++) {
-				printf("-");
+	if(game.mode == init){
+		printf("Error: invalid command\n");
+	}else{
+
+		for (i = 0; i < game->m * game->n; i++) {
+			if (i % game->rows == 0) {
+				for (j = 0; j < game->n * game->m * 4 + game->n + 1; j++) {
+					printf("-");
+				}
+				printf("\n");
+			}
+			for (j = 0; j < game->n * game->m; j++) {
+				if (j == 0) {
+					printf("|");
+				}
+				printf(" ");
+				if (game->board[j][i].value == 0) {
+					printf("   ");
+				} else {
+					printf("%2d", game->board[j][i].value);
+					if (game->board[j][i].fixed)
+						printf(".");
+					else if ((game->board[j][i].error) && ((game->markErrors) || (game->mode == edit))) /*should add error check for the cell*/
+						printf("*");
+					else
+						printf(" ");
+				}
+				if (j % game->m == game->n - 1)
+					printf("|");
 			}
 			printf("\n");
 		}
-		for (j = 0; j < game->n * game->m; j++) {
-			if (j == 0) {
-				printf("|");
-			}
-			printf(" ");
-			if (game->board[j][i].value == 0) {
-				printf("   ");
-			} else {
-				printf("%2d", game->board[j][i].value);
-				if (game->board[j][i].fixed)
-					printf(".");
-				else if ((game->board[j][i].error) && ((game->markErrors) || (game->mode == edit))) /*should add error check for the cell*/
-					printf("*");
-				else
-					printf(" ");
-			}
-			if (j % game->m == game->n - 1)
-				printf("|");
+		for (j = 0; j < game->n * game->m * 4 + game->n + 1; j++) {
+			printf("-");
 		}
 		printf("\n");
 	}
-	for (j = 0; j < game->n * game->m * 4 + game->n + 1; j++) {
-		printf("-");
-	}
-	printf("\n");
 }
 
 /* a command the user can put to set value to cell (row,col) */
 void set(Game *game, int row, int col, int value, int printSign){
-	/* check the cell is not fixed */
-	if(game->board[row-1][col-1].fixed ==1){
-		printf("Error: cell is fixed\n");
-		return;
-	}
-	/* set the value to the suitable cell and print the board */
-	if((value == 0)||(isSafe(game.board, row-1, col-1, value) == 1)){
-		clearNextMoves(game);
-		setMove(game, row, col, value, game->board[row-1][col-1].value);
-		game->board[row-1][col-1].value = value;
-		if(printSign == 1){
-			printBoard(game->board);
+	if(game.mode == init){
+		printf("Error: invalid command\n");
+	}else{
+		/* check the cell is not fixed */
+		if(game->board[row-1][col-1].fixed ==1){
+			printf("Error: cell is fixed\n");
+			return;
 		}
-	}
-	else
-		printf("Error: value is invalid\n");
-	/* check if the board is full. if it is, end the game */
-	if(findUnassignedLocation(game.board) == 0){
-		printf("Puzzle solved successfully\n");
-		endGame(game.board);
+		/* set the value to the suitable cell and print the board */
+		if((value == 0)||(isSafe(game.board, row-1, col-1, value) == 1)){
+			clearNextMoves(game);
+			setMove(game, row, col, value, game->board[row-1][col-1].value);
+			game->board[row-1][col-1].value = value;
+			if(printSign == 1){
+				printBoard(game->board);
+			}
+		}
+		else
+			printf("Error: value is invalid\n");
+		/* check if the board is full. if it is, end the game */
+		if(findUnassignedLocation(game.board) == 0){
+			printf("Puzzle solved successfully\n");
+			endGame(game.board);
+		}
 	}
 }
 
 
 int validate(Game *game, int printSign){
 	int ilpSolverRes;
-	if(isErrorneous(game)){
-		if (printSign){
-			printf("The board is errorneous.\n")
-		}
-		return 0;
+	if(game.mode == init){
+		printf("Error: invalid command\n");
 	}
 	else{
-		ilpSolverRes = ilpSolver(game);
-		if(ilpSolverRes == 1){
-			if(printSign){
-				printf("The board is valid and solvable, you may continue.\n");
-			}
-			return 1;
-		}
-		else{
-			if(printSign){
-				printf("The board is not solvable.\n");
+		if(isErrorneous(game)){
+			if (printSign){
+				printf("The board is errorneous.\n");
 			}
 			return 0;
+		}
+		else{
+			ilpSolverRes = ilpSolver(game);
+			if(ilpSolverRes == 1){
+				if(printSign){
+					printf("The board is valid and solvable, you may continue.\n");
+				}
+				return 1;
+			}
+			else{
+				if(printSign){
+					printf("The board is not solvable.\n");
+				}
+				return 0;
+			}
 		}
 	}
 }
@@ -217,7 +231,9 @@ int isErrorneous(Game *game){
 }
 
 void mark_errors(int markErrorNum, Game* game){
-	if(markErrorNum == 0 | markErrorNum == 1)
+	if(game.mode != solve)
+		printf("Error: invalid command\n");
+	else if(markErrorNum == 0 | markErrorNum == 1)
 		game.markErrors = markErrorNum;
 	else
 		printf("Error: mark_errors can get only 0 or 1\n");
@@ -424,6 +440,12 @@ void save(int command[],Game *game, char *path) {
 	}
 	saveToFile(game, path);
 }
+void guess(Game * game, int threshold){
+	if(game.mode != solve){
+		printf("Error: invalid command\n");
+	}
+	else{
+}
 /* start the game and interactively apply the users commands */
 void gameControl(){
 	char input[256];
@@ -447,32 +469,21 @@ void gameControl(){
 				edit(p, game, path);
 				break;
 			case mark_errors:
-				if(game.mode == solve)
-					mark_errors(command[1], error);
-				else
-					printf("Error: invalid command\n");
+				mark_errors(command[1], error);
 				break;
 			case printBoard:
-				if(game.mode != init)
-					printBoard(game);
-				else
-					printf("Error: invalid command\n");
+				printBoard(game);
 				break;
 			case set:
 				if(game.mode != init)
 					set(game);
 				break;
 			case validate:
-				if(game.mode != init)
-					validate(game);
-				else
-					printf("Error: invalid command\n");
+				validate(game);
 				break;
 			case guess:
-				if(game.mode == solve)
-					guess(game);
-				else
-					printf("Error: invalid command\n");
+				guess(game);
+				break;
 			case generate:
 				if(game.mode == edit)
 					generate(game);
