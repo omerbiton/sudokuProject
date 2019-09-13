@@ -79,46 +79,40 @@ void reset(Game* game){
 }
 
 /* print the board in the required format */
-void printBoard(Game* game){
-	int n = game.n;
-	int m = game.m;
-	int N = n*m;
-	int row;
-	int col;
-    while(doubleNM != 0)
-    {
-        // n = n/10
-    	doubleNM /= 10;
-        ++maxSpacePerCell;
-    }
-	/* print each row*/
-	for(row = 0; row<n*m; row++){
-		/* before rows that are multiple of 3, print the separator row*/
-		if(row%n ==0)
-			printf(SEP);
-		for(col = 0; col<n*m; col++){
-			/* before cols that are multiple of 3, print the separator sign */
-			if(col%m == 0)
-				printf("| ");
-			/* print the value of the cell according to if it is fixed or filled */
-			if(game->board[row][col].fixed == 0){
-				if(game->board[row][col].value != 0){
-					printf(" %d ", board[row][col].value);
-				}
-				else{
-					printf("   ");
-				}
+void printBoard(Game *game) {
+	int i, j;
+	for (i = 0; i < game->m * game->n; i++) {
+		if (i % game->rows == 0) {
+			for (j = 0; j < game->n * game->m * 4 + game->n + 1; j++) {
+				printf("-");
 			}
-			else{
-				if(game->mode == 2) /*ignore fixed in edit mode*/
-					printf(" %d ", game->board[row][col].value);
-				else
-					printf("%d. ", game->board[row][col].value);
-			}
+			printf("\n");
 		}
-		printf("|\n");
+		for (j = 0; j < game->n * game->m; j++) {
+			if (j == 0) {
+				printf("|");
+			}
+			printf(" ");
+			if (game->board[j][i].value == 0) {
+				printf("   ");
+			} else {
+				printf("%2d", game->board[j][i].value);
+				if (game->board[j][i].fixed)
+					printf(".");
+				else if ((game->board[j][i].error) && ((game->markErrors) || (game->mode == edit))) /*should add error check for the cell*/
+					printf("*");
+				else
+					printf(" ");
+			}
+			if (j % game->m == game->n - 1)
+				printf("|");
+		}
+		printf("\n");
 	}
-	printf(SEP);
+	for (j = 0; j < game->n * game->m * 4 + game->n + 1; j++) {
+		printf("-");
+	}
+	printf("\n");
 }
 
 /* a command the user can put to set value to cell (row,col) */
@@ -373,130 +367,136 @@ void hint(Game* game , int x , int y){
 	free(filledCells);
 	free(sol);
 }
+void solve(int command[], Game *game, char *path){
+	int success;
+	if(commands[1] == 1)/*no path in command*/
+		printf("Error: invalid command, have to enter a path\n");
+	else{
+		success = loadBoard(game, path);
+		if(success == 1)
+			game.mode = solve;
+	}
+}
+void edit(int command[], Game *game, char *path){
+	int success;
+	if(commands[1] == 1) /*no path in command*/
+		createBoard(game);
+	else{
+		success = loadBoard(game, path);
+		if(success == 1)
+			game.mode = edit;
+	}
+}
 
 /* start the game and interactively apply the users commands */
 void gameControl(){
 	char input[256];
 	int command[4] = {0};
-/*	int markErrors = 1;
-	int* error = &markErrors;*/
+	int markErrors = 1;
+	int* error = &markErrors;
 	int *p = command;
 	char strPath[256];
 	char *path = strPath;
 	Game game =  createGame();
-	game.markErros = 1;
 	/* scan the user commands till EOF */
 	while (!feof(stdin)) {
 		fflush(stdin);
 		if (fgets(input, 1024, stdin) != NULL) {
 			parseUserInput(p, path, input);
 			switch (command[0]) {
-			case 1: /*solve command */
-				if(commands[1] == 1)
-					printf("Error: invalid command, have to enter a path\n");
-				else{
-					/*should load an existing board*/
-					game.mode=1;
-				}
+			case solve:
+				solve(p, game, path);
 				break;
-			case 2: /*edit command */
-				if(game.markErrors == 0)
-					game.markErrors = 1;
-				if(commands[1] == 1){
-					/*should load a new board 9x9*/
-				}
-				else{
-					/*should load an existing board*/
-				}
-				game.mode=2;
+			case edit:
+				edit(p, game, path);
 				break;
-			case 3: /*mark_errors command*/
-				if(game.mode == 1)
-					mark_errors(command[1], game);
+			case mark_errors:
+				if(game.mode == solve)
+					mark_errors(command[1], error);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 4: /*printBoard command*/
-				if(game.mode != 0)
+			case printBoard:
+				if(game.mode != init)
 					printBoard(game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 5: /*set command */
-				if(game.mode != 0)
+			case set:
+				if(game.mode != init)
 					set(game);
 				break;
-			case 6: /*validate command*/
-				if(game.mode != 0)
+			case validate:
+				if(game.mode != init)
 					validate(game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 7: /*guess command*/
-				if(game.mode == 1)
+			case guess:
+				if(game.mode == solve)
 					guess(game);
 				else
 					printf("Error: invalid command\n");
-			case 8: /*generate command*/
-				if(game.mode == 2)
+			case generate:
+				if(game.mode == edit)
 					generate(game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 9: /*undo command*/
-				if(game.mode != 0)
+			case undo:
+				if(game.mode != init)
 					undo(game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 10: /*redo command*/
-				if(game.mode != 0)
+			case redo:
+				if(game.mode != init)
 					redo(game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 11: /*save command*/
-				if(game.mode != 0)
+			case save:
+				if(game.mode != init)
 					save(game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 12: /*hint command*/
-				if(game.mode == 2)
+			case hint:
+				if(game.mode == edit)
 					hint(command[2], command[1], game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 13: /*guess_hint command*/
-				if(game.mode == 2)
+			case guess_hint:
+				if(game.mode == edit)
 					hint(command[2], command[1], game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 14: /*num_solutions command*/
-				if(game.mode != 0)
-					num_solutions(game.board);
+			case num_solutions:
+				if(game.mode != init)
+					num_solutions(game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 15: /*autofill command*/
-				if(game.mode == 2)
+			case autofill:
+				if(game.mode == edit)
 					autofill(game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 16: /*reset command*/
-				if(game.mode != 0)
+			case reset:
+				if(game.mode != init)
 					reset(game);
 				else
 					printf("Error: invalid command\n");
 				break;
-			case 17: /*exit command*/
+			case exit:
 				exitGame(game);
 				break;
-			case 18: /*blank line */
+			case blank_line:
 				break;
-			case 19: /*otherwise */
+			case otherwise:
 				printf("Error: invalid command\n");
 				break;
 			}
