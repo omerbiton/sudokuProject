@@ -226,5 +226,29 @@ int ilpSolver(Game game){
 }
 
 
+void autofill(Game *game){
+	int row, col, val, N = game->n*game ;
+	if(isErroneous(game)){
+		printf("ERROR: board is erroneous.\n");
+		return;
+	}
+	/* find the optional values for every cell of the board */
+	for(row = 0; row < N; row++){
+		for(col = 0; col < N; col++){
+			setOptionalValues(game->board, row, col);
+		}
+	}
+	/* for all the cells that has only one value possible, autofill this value */
+	for(row = 0; row < N; row++){
+		for(col = 0; col < N; col++){
+			if(game->board[row][col].numOfOptionalValues == 1){
+				set(game, row, col, game->board[row][col].optionalValues[0], 0);
+				printf("cell <%d,%d> was set to %d\n", row, col, game->board[row][col].optionalValues[0]);
+			}
+		}
+	}
+}
+
+
 
 

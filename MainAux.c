@@ -23,22 +23,21 @@
 
 /* Returns 1 if an assigned entry in the specified row matches the given number
  * or 0 else */
-int instancesInRow(Game *game, int row, int value){
-	int col = 0;
-	int numOfInstances = 0;
-	int* errorCells = (int*)calloc(game->n*game->m, sizeof(int));
+int instancesInRow(Game game, int row, int value){
+	int col, numOfInstances = 0;
+	int errorCells = (int*) calloc(game.n*game.m, sizeof(int));
 	/* go over all the columns of the row and count how many times value appears */
-    for (col = 0; col < game->n*game->m; col++) {
-        if (game->board[row][col].value == value){
+    for (col = 0; col < game.n*game.m; col++) {
+        if (board[row][col].value == value){
         	errorCells[col] = 1;
-        	game->board[row][col].error = 0;
+        	board[row][col].error = 0;
         	numOfInstances++;
         }
     }
     if(numOfInstances > 1 ){
-    	for(col = 0; col < game->n*game->m, col++){
+    	for(col = 0; col < game.n*game.m, col++){
     		if(errorCells[col] == 1){
-    			game->board[row][col].error = 1;
+    			game.board[row][col].error = 1;
     		}
     	}
     }
